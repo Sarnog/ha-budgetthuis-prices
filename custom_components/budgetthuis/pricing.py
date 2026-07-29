@@ -42,4 +42,4 @@ def calculate_price(hour: HourPrice, config: ContractConfig) -> float | None:
         + config.inkoopvergoeding
         + hour.energy_tax_net
     )
-    return round(subtotal * (1 + config.vat_percent / 100), 5)
+    return round(subtotal * (1 + config.vat_percent / 100), 3)

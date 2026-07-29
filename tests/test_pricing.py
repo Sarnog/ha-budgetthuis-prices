@@ -26,7 +26,7 @@ def test_calculates_all_in_price_from_beursprijs() -> None:
     config = ContractConfig(inkoopvergoeding=0.01682, vat_percent=21.0)
     price = calculate_price(_hour(0.05), config)
 
-    expected = round((0.05 + 0.01682 + 0.09161) * 1.21, 5)
+    expected = round((0.05 + 0.01682 + 0.09161) * 1.21, 3)
     assert price == expected
 
 
@@ -34,7 +34,7 @@ def test_beursprijs_markup_is_added_before_vat() -> None:
     config = ContractConfig(inkoopvergoeding=0.01682, vat_percent=21.0, beursprijs_markup=0.01)
     price = calculate_price(_hour(0.05), config)
 
-    expected = round((0.05 + 0.01 + 0.01682 + 0.09161) * 1.21, 5)
+    expected = round((0.05 + 0.01 + 0.01682 + 0.09161) * 1.21, 3)
     assert price == expected
 
 
@@ -42,7 +42,7 @@ def test_zero_vat_returns_bare_subtotal() -> None:
     config = ContractConfig(inkoopvergoeding=0.01, vat_percent=0.0)
     price = calculate_price(_hour(0.02, energy_tax_net=0.10), config)
 
-    assert price == round(0.02 + 0.01 + 0.10, 5)
+    assert price == round(0.02 + 0.01 + 0.10, 3)
 
 
 def test_missing_beursprijs_returns_none() -> None:

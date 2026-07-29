@@ -38,7 +38,7 @@ Configurable via the integration's "Configure" option (Settings → Devices & Se
 |---|---|---|
 | Inkoopvergoeding | Purchasing fee (EUR/kWh) | 0.01682 |
 | BTW | VAT (%) | 21 |
-| Beursprijs adjustment | Optional markup/offset applied to the live beursprijs before the above (EUR/kWh) | 0 |
+| Beursprijs adjustment | Extra correction on top of the live beursprijs (EUR/kWh) — beursprijs itself is always fetched automatically, this is **not** where you enter it; leave at 0 unless you have a specific reason | 0 |
 
 Price formula: `(beursprijs + beursprijs_adjustment + inkoopvergoeding + energiebelasting) × (1 + btw / 100)`.
 

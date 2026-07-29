@@ -42,7 +42,7 @@ def _average(hours: list[PricedHour]) -> float | None:
     prices = _priced(hours)
     if not prices:
         return None
-    return round(sum(prices) / len(prices), 5)
+    return round(sum(prices) / len(prices), 3)
 
 
 def _serialize(hours: list[PricedHour]) -> list[dict]:
@@ -80,6 +80,7 @@ class BudgetThuisBaseSensor(CoordinatorEntity[BudgetThuisCoordinator], SensorEnt
     _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:currency-eur"
+    _attr_suggested_display_precision = 3
 
     def __init__(
         self,

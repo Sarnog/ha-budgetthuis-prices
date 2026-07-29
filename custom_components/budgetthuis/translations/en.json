@@ -14,11 +14,11 @@
     "step": {
       "init": {
         "title": "Contract pricing",
-        "description": "Inkoopvergoeding is your contract's own purchasing fee - match it to the breakdown shown in the Budget Thuis app under your tariff. Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. The defaults are a starting point, not guaranteed to match your contract.",
+        "description": "Inkoopvergoeding is your contract's own purchasing fee - match it to the breakdown shown in the Budget Thuis app under your tariff. Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. Beursprijs (the live market price) is also fetched automatically per hour - do not enter it below. The defaults are a starting point, not guaranteed to match your contract.",
         "data": {
           "inkoopvergoeding": "Inkoopvergoeding (EUR/kWh)",
           "vat_percent": "BTW (%)",
-          "beursprijs_markup": "Beursprijs adjustment (EUR/kWh, optional)"
+          "beursprijs_markup": "Extra correction on top of the live beursprijs (EUR/kWh, leave at 0 unless you have a specific reason)"
         }
       }
     }
