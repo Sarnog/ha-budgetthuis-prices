@@ -35,7 +35,7 @@ class BudgetThuisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> BudgetThuisOptionsFlow:
-        return BudgetThuisOptionsFlow(config_entry)
+        return BudgetThuisOptionsFlow()
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         await self.async_set_unique_id(DOMAIN)
@@ -49,9 +49,6 @@ class BudgetThuisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
     """Lets the customer match the calculation to their own contract's tariff breakdown."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
