@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -167,29 +167,34 @@ class BudgetThuisHighestPriceTodaySensor(BudgetThuisBaseSensor):
 class BudgetThuisPeriodSensor(BudgetThuisEntity, SensorEntity):
     """Shared setup for the cheapest/most-expensive contiguous-period sensors.
 
-    State is the period's start time; its length isn't fixed - it's whatever
-    consecutive run of below/above-average hours the day's prices produce.
+    State is a human-readable "HH:MM - HH:MM" time range, not a timestamp -
+    a timestamp device class would render as relative time ("2 hours ago"),
+    which is meaningless for a recurring block of the day. Its length isn't
+    fixed either; it's whatever consecutive run of below/above-average hours
+    the day's prices produce.
     """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:clock-outline"
 
     def _period(self) -> tuple | None:
         raise NotImplementedError
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         period = self._period()
-        return period[0] if period else None
+        if period is None:
+            return None
+        start, end, _average_price = period
+        return f"{start:%H:%M} - {end:%H:%M}"
 
     @property
     def extra_state_attributes(self) -> dict:
         period = self._period()
         if period is None:
             return {}
-        _start, end, average_price = period
-        return {"end": end.isoformat(), "average_price": average_price}
+        start, end, average_price = period
+        return {"start": start.isoformat(), "end": end.isoformat(), "average_price": average_price}
 
 
 class BudgetThuisCheapestPeriodTodaySensor(BudgetThuisPeriodSensor):
