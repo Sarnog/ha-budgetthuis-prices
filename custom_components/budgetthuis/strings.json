@@ -39,6 +39,12 @@
       },
       "highest_price_today": {
         "name": "Highest price today"
+      },
+      "cheapest_period_today": {
+        "name": "Cheapest period today"
+      },
+      "most_expensive_period_today": {
+        "name": "Most expensive period today"
       }
     },
     "binary_sensor": {

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -14,7 +14,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import CURRENCY_EUR_PER_KWH, DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
-from .helpers import average, device_info as get_device_info, highest, hour_for, lowest
+from .helpers import device_info as get_device_info
+from .stats import average, cheapest_period, highest, hour_for, lowest, most_expensive_period
 
 
 def _serialize(hours: list[PricedHour]) -> list[dict]:
@@ -43,18 +44,16 @@ async def async_setup_entry(
             BudgetThuisTodayAveragePriceSensor(coordinator, entry, device_info),
             BudgetThuisLowestPriceTodaySensor(coordinator, entry, device_info),
             BudgetThuisHighestPriceTodaySensor(coordinator, entry, device_info),
+            BudgetThuisCheapestPeriodTodaySensor(coordinator, entry, device_info),
+            BudgetThuisMostExpensivePeriodTodaySensor(coordinator, entry, device_info),
         ]
     )
 
 
-class BudgetThuisBaseSensor(CoordinatorEntity[BudgetThuisCoordinator], SensorEntity):
-    """Shared setup for all Budget Thuis price sensors."""
+class BudgetThuisEntity(CoordinatorEntity[BudgetThuisCoordinator]):
+    """Shared setup for all Budget Thuis entities."""
 
     _attr_has_entity_name = True
-    _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:currency-eur"
-    _attr_suggested_display_precision = 3
 
     def __init__(
         self,
@@ -73,6 +72,15 @@ class BudgetThuisBaseSensor(CoordinatorEntity[BudgetThuisCoordinator], SensorEnt
     @property
     def data(self) -> BudgetThuisData:
         return self.coordinator.data
+
+
+class BudgetThuisBaseSensor(BudgetThuisEntity, SensorEntity):
+    """Shared setup for the numeric EUR/kWh price sensors."""
+
+    _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:currency-eur"
+    _attr_suggested_display_precision = 3
 
 
 class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
@@ -154,3 +162,53 @@ class BudgetThuisHighestPriceTodaySensor(BudgetThuisBaseSensor):
     @property
     def native_value(self) -> float | None:
         return highest(self.data.today)
+
+
+class BudgetThuisPeriodSensor(BudgetThuisEntity, SensorEntity):
+    """Shared setup for the cheapest/most-expensive contiguous-period sensors.
+
+    State is the period's start time; its length isn't fixed - it's whatever
+    consecutive run of below/above-average hours the day's prices produce.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-outline"
+
+    def _period(self) -> tuple | None:
+        raise NotImplementedError
+
+    @property
+    def native_value(self):
+        period = self._period()
+        return period[0] if period else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        period = self._period()
+        if period is None:
+            return {}
+        _start, end, average_price = period
+        return {"end": end.isoformat(), "average_price": average_price}
+
+
+class BudgetThuisCheapestPeriodTodaySensor(BudgetThuisPeriodSensor):
+    """Start of today's cheapest consecutive run of below-average hours."""
+
+    def __init__(self, coordinator, entry, device_info) -> None:
+        super().__init__(coordinator, entry, device_info, "cheapest_period_today", "Cheapest period today")
+
+    def _period(self):
+        return cheapest_period(self.data.today)
+
+
+class BudgetThuisMostExpensivePeriodTodaySensor(BudgetThuisPeriodSensor):
+    """Start of today's most expensive consecutive run of above-average hours."""
+
+    def __init__(self, coordinator, entry, device_info) -> None:
+        super().__init__(
+            coordinator, entry, device_info, "most_expensive_period_today", "Most expensive period today"
+        )
+
+    def _period(self):
+        return most_expensive_period(self.data.today)

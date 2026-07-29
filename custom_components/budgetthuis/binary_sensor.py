@@ -11,7 +11,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData
-from .helpers import average, device_info as get_device_info, hour_for
+from .helpers import device_info as get_device_info
+from .stats import average, hour_for
 
 
 async def async_setup_entry(
