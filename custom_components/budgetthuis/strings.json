@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Budget Thuis Dynamic Prices",
+        "description": "Add Budget Thuis dynamic electricity price sensors. This reads the public tariff page and requires no account or API key. Only one instance is needed per Home Assistant install."
+      }
+    },
+    "abort": {
+      "already_configured": "Budget Thuis Dynamic Prices is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Contract pricing",
+        "description": "Match these to the breakdown shown in the Budget Thuis app under your tariff (beursprijs + inkoopvergoeding + energiebelasting, then BTW). The defaults are a starting point, not guaranteed to match your contract.",
+        "data": {
+          "inkoopvergoeding": "Inkoopvergoeding (EUR/kWh)",
+          "energiebelasting": "Energiebelasting (EUR/kWh)",
+          "vat_percent": "BTW (%)",
+          "beursprijs_markup": "Beursprijs adjustment (EUR/kWh, optional)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_price": {
+        "name": "Current price"
+      },
+      "next_hour_price": {
+        "name": "Next hour price"
+      },
+      "today_average_price": {
+        "name": "Today average price"
+      }
+    }
+  }
+}
