@@ -33,6 +33,17 @@
       },
       "today_average_price": {
         "name": "Today average price"
+      },
+      "lowest_price_today": {
+        "name": "Lowest price today"
+      },
+      "highest_price_today": {
+        "name": "Highest price today"
+      }
+    },
+    "binary_sensor": {
+      "cheap_hour": {
+        "name": "Cheap hour"
       }
     }
   }

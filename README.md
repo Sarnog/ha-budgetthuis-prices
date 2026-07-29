@@ -16,7 +16,7 @@ Prices → Configure.
 
 ## Entities
 
-One device, three sensors:
+One device, five sensors and a binary sensor:
 
 - **Current price** (`sensor.current_price`) — this hour's customer-contract-accurate price
   (EUR/kWh). Carries the full hourly breakdown as attributes: `raw_today`, `raw_tomorrow`
@@ -26,6 +26,14 @@ One device, three sensors:
 - **Next hour price** (`sensor.next_hour_price`) — the upcoming hour's price, useful for
   pre-emptive automations.
 - **Today average price** (`sensor.today_average_price`).
+- **Lowest price today** (`sensor.lowest_price_today`) / **Highest price today**
+  (`sensor.highest_price_today`) — the same figures already in `current_price`'s attributes,
+  exposed as their own entities so they're pickable in the UI automation editor (e.g. a
+  `numeric_state` trigger comparing `current_price` against `lowest_price_today`) without
+  needing a template.
+- **Cheap hour** (`binary_sensor.cheap_hour`) — on whenever the current price is at or below
+  today's average. A no-configuration building block for "run this when it's cheap"
+  automations that doesn't require templating `raw_today` yourself.
 
 Tomorrow's prices are only published by Budget Thuis in the afternoon; until then
 `raw_tomorrow` is empty and `tomorrow_valid` is `false`.

@@ -7,7 +7,6 @@ from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -15,34 +14,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import CURRENCY_EUR_PER_KWH, DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
-
-
-def _device_info(entry: ConfigEntry) -> DeviceInfo:
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry.entry_id)},
-        name="Budget Thuis Dynamic Prices",
-        manufacturer="Budget Thuis",
-        entry_type=DeviceEntryType.SERVICE,
-    )
-
-
-def _hour_for(hours: list[PricedHour], moment) -> PricedHour | None:
-    for hour in hours:
-        if hour.start <= moment < hour.end:
-            return hour
-    return None
-
-
-def _priced(hours: list[PricedHour]) -> list[float]:
-    """Only the hours whose customer price could actually be calculated."""
-    return [h.price for h in hours if h.price is not None]
-
-
-def _average(hours: list[PricedHour]) -> float | None:
-    prices = _priced(hours)
-    if not prices:
-        return None
-    return round(sum(prices) / len(prices), 3)
+from .helpers import average, device_info as get_device_info, highest, hour_for, lowest
 
 
 def _serialize(hours: list[PricedHour]) -> list[dict]:
@@ -62,13 +34,15 @@ async def async_setup_entry(
 ) -> None:
     """Set up Budget Thuis sensors from a config entry."""
     coordinator: BudgetThuisCoordinator = hass.data[DOMAIN][entry.entry_id]
-    device_info = _device_info(entry)
+    device_info = get_device_info(entry)
 
     async_add_entities(
         [
             BudgetThuisCurrentPriceSensor(coordinator, entry, device_info),
             BudgetThuisNextHourPriceSensor(coordinator, entry, device_info),
             BudgetThuisTodayAveragePriceSensor(coordinator, entry, device_info),
+            BudgetThuisLowestPriceTodaySensor(coordinator, entry, device_info),
+            BudgetThuisHighestPriceTodaySensor(coordinator, entry, device_info),
         ]
     )
 
@@ -109,7 +83,7 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
 
     @property
     def native_value(self) -> float | None:
-        hour = _hour_for(self.data.today, dt_util.now())
+        hour = hour_for(self.data.today, dt_util.now())
         return hour.price if hour else None
 
     @property
@@ -119,12 +93,12 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
             "raw_today": _serialize(data.today),
             "raw_tomorrow": _serialize(data.tomorrow),
             "tomorrow_valid": data.tomorrow_valid,
-            "average_today": _average(data.today),
-            "lowest_today": min(_priced(data.today), default=None),
-            "highest_today": max(_priced(data.today), default=None),
-            "average_tomorrow": _average(data.tomorrow),
-            "lowest_tomorrow": min(_priced(data.tomorrow), default=None),
-            "highest_tomorrow": max(_priced(data.tomorrow), default=None),
+            "average_today": average(data.today),
+            "lowest_today": lowest(data.today),
+            "highest_today": highest(data.today),
+            "average_tomorrow": average(data.tomorrow),
+            "lowest_tomorrow": lowest(data.tomorrow),
+            "highest_tomorrow": highest(data.tomorrow),
         }
 
 
@@ -139,7 +113,7 @@ class BudgetThuisNextHourPriceSensor(BudgetThuisBaseSensor):
     @property
     def native_value(self) -> float | None:
         next_hour = dt_util.now() + timedelta(hours=1)
-        hour = _hour_for(self.data.today, next_hour) or _hour_for(self.data.tomorrow, next_hour)
+        hour = hour_for(self.data.today, next_hour) or hour_for(self.data.tomorrow, next_hour)
         return hour.price if hour else None
 
 
@@ -153,4 +127,30 @@ class BudgetThuisTodayAveragePriceSensor(BudgetThuisBaseSensor):
 
     @property
     def native_value(self) -> float | None:
-        return _average(self.data.today)
+        return average(self.data.today)
+
+
+class BudgetThuisLowestPriceTodaySensor(BudgetThuisBaseSensor):
+    """Today's lowest customer-contract-accurate price."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry, device_info) -> None:
+        super().__init__(coordinator, entry, device_info, "lowest_price_today", "Lowest price today")
+
+    @property
+    def native_value(self) -> float | None:
+        return lowest(self.data.today)
+
+
+class BudgetThuisHighestPriceTodaySensor(BudgetThuisBaseSensor):
+    """Today's highest customer-contract-accurate price."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry, device_info) -> None:
+        super().__init__(coordinator, entry, device_info, "highest_price_today", "Highest price today")
+
+    @property
+    def native_value(self) -> float | None:
+        return highest(self.data.today)

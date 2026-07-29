@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import BudgetThuisCoordinator
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "binary_sensor"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
