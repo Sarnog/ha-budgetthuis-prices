@@ -13,11 +13,9 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_BEURSPRIJS_MARKUP,
-    CONF_ENERGIEBELASTING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
-    DEFAULT_ENERGIEBELASTING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
     DOMAIN,
@@ -57,7 +55,6 @@ def _contract_config(entry: ConfigEntry) -> ContractConfig:
     options = entry.options
     return ContractConfig(
         inkoopvergoeding=options.get(CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING),
-        energiebelasting=options.get(CONF_ENERGIEBELASTING, DEFAULT_ENERGIEBELASTING),
         vat_percent=options.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT),
         beursprijs_markup=options.get(CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP),
     )

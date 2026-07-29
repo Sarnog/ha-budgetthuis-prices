@@ -8,11 +8,9 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
     CONF_BEURSPRIJS_MARKUP,
-    CONF_ENERGIEBELASTING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
-    DEFAULT_ENERGIEBELASTING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
     DOMAIN,
@@ -60,10 +58,6 @@ class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_INKOOPVERGOEDING,
                     default=options.get(CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING),
-                ): vol.Coerce(float),
-                vol.Required(
-                    CONF_ENERGIEBELASTING,
-                    default=options.get(CONF_ENERGIEBELASTING, DEFAULT_ENERGIEBELASTING),
                 ): vol.Coerce(float),
                 vol.Required(
                     CONF_VAT_PERCENT,

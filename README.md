@@ -9,9 +9,10 @@ Reads the public tariff page
 directly — no account, login, or API key needed. Rather than trust the site's own displayed
 all-in price (which reflects Budget Thuis's generic published figure, not necessarily your
 specific contract), the integration recomputes the price itself from the live per-hour
-beursprijs plus your own contract's inkoopvergoeding, energiebelasting and BTW — the exact
-breakdown shown on the tariff screen in the Budget Thuis app. Configure those via
-Settings → Devices & Services → Budget Thuis Dynamic Prices → Configure.
+beursprijs and energiebelasting (both published on the tariff page) plus your own contract's
+inkoopvergoeding and BTW — the exact breakdown shown on the tariff screen in the Budget Thuis
+app. Configure your inkoopvergoeding via Settings → Devices & Services → Budget Thuis Dynamic
+Prices → Configure.
 
 ## Entities
 
@@ -36,15 +37,18 @@ Configurable via the integration's "Configure" option (Settings → Devices & Se
 | Field | Meaning | Default |
 |---|---|---|
 | Inkoopvergoeding | Purchasing fee (EUR/kWh) | 0.01682 |
-| Energiebelasting | Energy tax (EUR/kWh) | 0.11085 |
 | BTW | VAT (%) | 21 |
 | Beursprijs adjustment | Optional markup/offset applied to the live beursprijs before the above (EUR/kWh) | 0 |
 
 Price formula: `(beursprijs + beursprijs_adjustment + inkoopvergoeding + energiebelasting) × (1 + btw / 100)`.
 
-**The defaults are a starting point, not guaranteed to match your contract** — read them off
-your own tariff breakdown in the Budget Thuis app and enter those instead. Changing these
-options reloads the integration and recalculates immediately, no restart needed.
+Energiebelasting isn't a configurable field — it's a government-set tax rate (the same for
+every energy supplier), and its net amount is already published per hour on the tariff page,
+so it's read live rather than guessed. Inkoopvergoeding is the one number that's genuinely
+specific to your contract and isn't published anywhere public; **the default is a starting
+point, not guaranteed to match your contract** — read the real value off your own tariff
+breakdown in the Budget Thuis app and enter that instead. Changing these options reloads the
+integration and recalculates immediately, no restart needed.
 
 ## Installation
 
