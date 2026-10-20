@@ -15,8 +15,15 @@ if TYPE_CHECKING:
 
 
 def hour_for(hours: list[PricedHour], moment: datetime) -> PricedHour | None:
+    """The block containing moment, compared as absolute instants.
+
+    Datetimes that share a tzinfo compare by wall-clock time, ignoring the DST
+    fold, so the two 02:00-03:00 hours of the autumn changeover would be
+    indistinguishable with plain < comparisons.
+    """
+    instant = moment.timestamp()
     for hour in hours:
-        if hour.start <= moment < hour.end:
+        if hour.start.timestamp() <= instant < hour.end.timestamp():
             return hour
     return None
 

@@ -173,3 +173,42 @@ async def test_clock_survives_an_options_reload(hass, setup_integration, freezer
     assert await hass.config_entries.async_unload(entry.entry_id)
     await _move_to(hass, freezer, _local(DAY_1, 7, 0, 1))
     assert hass.states.get("sensor.budget_thuis_dynamic_prices_current_price").state == "unavailable"
+
+
+async def test_autumn_changeover_shows_each_0200_hour(
+    hass, enable_custom_integrations, aioclient_mock, freezer
+) -> None:
+    """On 2026-10-25 02:00-03:00 happens twice; each hour gets its own price."""
+    day = "2026-10-25"
+    naive_starts = [0, 1, 2, 2] + list(range(3, 24))
+    tariffs = [
+        {
+            "Start": f"{day} {h:02d}:00:00",
+            "End": f"{day} {h + 1:02d}:00:00" if h < 23 else "2026-10-26 00:00:00",
+            "TotalTariff": {"AmountGross": float(i)},
+            "Commodity": {"AmountNet": float(i)},
+            "EnergyTax": {"AmountNet": 0.0},
+        }
+        for i, h in enumerate(naive_starts)
+    ]
+    payload = json.dumps({"props": {"pageProps": {"tariffDays": [{"ElectricityTariffs": tariffs}]}}})
+    html = f'<script id="__NEXT_DATA__" type="application/json">{payload}</script>'
+
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    summer_0230 = datetime(2026, 10, 25, 0, 30, tzinfo=ZoneInfo("UTC"))
+    freezer.move_to(summer_0230)
+    aioclient_mock.get(TARIFF_URL, text=html)
+    entry = MockConfigEntry(domain=DOMAIN, data={}, options=NO_SURCHARGES, unique_id=DOMAIN)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    current = "sensor.budget_thuis_dynamic_prices_current_price"
+    next_hour = "sensor.budget_thuis_dynamic_prices_next_hour_price"
+    assert _price(hass, current) == 2.0  # 02:30 summer time
+    assert _price(hass, next_hour) == 3.0  # 02:30 winter time, one real hour later
+
+    await _move_to(hass, freezer, summer_0230 + timedelta(hours=1))  # 02:30 winter time
+
+    assert _price(hass, current) == 3.0
+    assert _price(hass, next_hour) == 4.0

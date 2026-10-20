@@ -109,3 +109,17 @@ def test_periods_skip_hours_with_missing_price() -> None:
 
     start, end, run_average = cheapest_period(hours)
     assert (start, end, run_average) == (hours[0].start, hours[0].end, 0.05)
+
+
+def test_hour_for_tells_the_repeated_autumn_hour_apart() -> None:
+    """Same tzinfo + same wall-clock time must still match by real instant."""
+    from zoneinfo import ZoneInfo
+
+    ams = ZoneInfo("Europe/Amsterdam")
+    summer = datetime(2026, 10, 25, 2, 0, tzinfo=ams, fold=0)
+    winter = datetime(2026, 10, 25, 2, 0, tzinfo=ams, fold=1)
+    after = datetime(2026, 10, 25, 3, 0, tzinfo=ams)
+    hours = [_Hour(summer, winter, 0.1), _Hour(winter, after, 0.2)]
+
+    assert hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=0)).price == 0.1
+    assert hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=1)).price == 0.2

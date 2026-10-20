@@ -121,7 +121,9 @@ class BudgetThuisNextHourPriceSensor(BudgetThuisBaseSensor):
 
     @property
     def native_value(self) -> float | None:
-        next_hour = dt_util.now() + timedelta(hours=1)
+        # utcnow(): adding an hour to a local time is wall-clock arithmetic,
+        # which skips or repeats an hour around the DST changeovers.
+        next_hour = dt_util.utcnow() + timedelta(hours=1)
         hour = hour_for(self.data.today, next_hour) or hour_for(self.data.tomorrow, next_hour)
         return hour.price if hour else None
 
