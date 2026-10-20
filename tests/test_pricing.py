@@ -23,18 +23,26 @@ def _hour(commodity_net: float | None, energy_tax_net: float | None = 0.09161) -
 
 
 def test_calculates_all_in_price_from_beursprijs() -> None:
-    config = ContractConfig(inkoopvergoeding=0.01682, vat_percent=21.0)
+    config = ContractConfig(inkoopvergoeding=0.016822, vat_percent=21.0)
     price = calculate_price(_hour(0.05), config)
 
-    expected = round((0.05 + 0.01682 + 0.09161) * 1.21, 3)
+    expected = round((0.05 + 0.09161) * 1.21 + 0.016822, 3)
     assert price == expected
 
 
+def test_inkoopvergoeding_is_not_taxed_again() -> None:
+    """The app shows the inkoopvergoeding including BTW; adding BTW again overcharges."""
+    config = ContractConfig(inkoopvergoeding=0.121, vat_percent=21.0)
+    price = calculate_price(_hour(0.0, energy_tax_net=0.0), config)
+
+    assert price == 0.121
+
+
 def test_beursprijs_markup_is_added_before_vat() -> None:
-    config = ContractConfig(inkoopvergoeding=0.01682, vat_percent=21.0, beursprijs_markup=0.01)
+    config = ContractConfig(inkoopvergoeding=0.016822, vat_percent=21.0, beursprijs_markup=0.01)
     price = calculate_price(_hour(0.05), config)
 
-    expected = round((0.05 + 0.01 + 0.01682 + 0.09161) * 1.21, 3)
+    expected = round((0.05 + 0.01 + 0.09161) * 1.21 + 0.016822, 3)
     assert price == expected
 
 
