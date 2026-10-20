@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.budgetthuis.parser import TariffParseError, parse_tariff_days
+from custom_components.budgetthuis.parser import GAS, TariffParseError, parse_tariff_days
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "tariff_page.html"
 
@@ -61,3 +61,31 @@ def test_missing_tariff_days_raises() -> None:
     html = '<script id="__NEXT_DATA__" type="application/json">{"props": {"pageProps": {}}}</script>'
     with pytest.raises(TariffParseError, match="No tariffDays"):
         parse_tariff_days(html)
+
+
+def test_parses_gas_blocks_per_day(tariff_html: str) -> None:
+    by_date = parse_tariff_days(tariff_html, GAS)
+
+    # Only 2026-07-29 carries gas in the fixture; days without it are left out.
+    assert set(by_date) == {"2026-07-29"}
+    blocks = by_date["2026-07-29"]
+    # Sorted by start, whatever order the page lists them in.
+    assert [b.start.hour for b in blocks] == [0, 6]
+    assert blocks[0].end.isoformat() == "2026-07-29T06:00:00+02:00"
+    assert blocks[1].end.isoformat() == "2026-07-30T00:00:00+02:00"
+    assert blocks[1].commodity_net == 0.8529
+    assert blocks[1].energy_tax_net == 0.6007
+
+
+def test_gas_does_not_leak_into_electricity(tariff_html: str) -> None:
+    today = parse_tariff_days(tariff_html)["2026-07-29"]
+    assert [h.price for h in today] == [0.2431, 0.2109]
+
+
+def test_page_without_gas_yields_no_gas_days() -> None:
+    html = (
+        '<script id="__NEXT_DATA__" type="application/json">'
+        '{"props": {"pageProps": {"tariffDays": [{"ElectricityTariffs": []}]}}}'
+        "</script>"
+    )
+    assert parse_tariff_days(html, GAS) == {}

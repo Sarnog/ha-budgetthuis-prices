@@ -14,11 +14,12 @@
     "step": {
       "init": {
         "title": "Contract pricing",
-        "description": "Inkoopvergoeding is your contract's own purchasing fee - match it to the breakdown shown in the Budget Thuis app under your tariff. Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. Beursprijs (the live market price) is also fetched automatically per hour - do not enter it below. The defaults are a starting point, not guaranteed to match your contract.",
+        "description": "Inkoopvergoeding is your contract's own purchasing fee - match it to the breakdown shown in the Budget Thuis app under your tariff. Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. Beursprijs (the live market price) is also fetched automatically per hour - do not enter it below. The defaults are a starting point, not guaranteed to match your contract. Gas inkoopvergoeding is the separate purchasing fee per m³ on your gas tariff; it defaults to 0 because there's no reliable public figure, so enter the value from your app if you have gas.",
         "data": {
           "inkoopvergoeding": "Inkoopvergoeding (EUR/kWh)",
           "vat_percent": "BTW (%)",
-          "beursprijs_markup": "Extra correction on top of the live beursprijs (EUR/kWh, leave at 0 unless you have a specific reason)"
+          "beursprijs_markup": "Extra correction on top of the live beursprijs (EUR/kWh, leave at 0 unless you have a specific reason)",
+          "gas_inkoopvergoeding": "Gas inkoopvergoeding (EUR/m³)"
         }
       }
     }
@@ -45,6 +46,9 @@
       },
       "most_expensive_period_today": {
         "name": "Most expensive period today"
+      },
+      "current_gas_price": {
+        "name": "Current gas price"
       }
     },
     "binary_sensor": {

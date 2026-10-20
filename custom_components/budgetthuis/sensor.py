@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import CURRENCY_EUR_PER_KWH, DOMAIN
+from .const import CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3, DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
 from .helpers import device_info as get_device_info
 from .stats import average, cheapest_period, highest, hour_for, lowest, most_expensive_period
@@ -46,6 +46,7 @@ async def async_setup_entry(
             BudgetThuisHighestPriceTodaySensor(coordinator, entry, device_info),
             BudgetThuisCheapestPeriodTodaySensor(coordinator, entry, device_info),
             BudgetThuisMostExpensivePeriodTodaySensor(coordinator, entry, device_info),
+            BudgetThuisCurrentGasPriceSensor(coordinator, entry, device_info),
         ]
     )
 
@@ -162,6 +163,37 @@ class BudgetThuisHighestPriceTodaySensor(BudgetThuisBaseSensor):
     @property
     def native_value(self) -> float | None:
         return highest(self.data.today)
+
+
+class BudgetThuisCurrentGasPriceSensor(BudgetThuisEntity, SensorEntity):
+    """Current customer-contract-accurate gas price (EUR/m³).
+
+    Gas is priced per gas day (06:00-06:00), which the page splits into a
+    00:00-06:00 and a 06:00-24:00 block per calendar day - so this changes
+    at 06:00, not every hour. Unknown when the page carries no gas tariffs.
+    """
+
+    _attr_native_unit_of_measurement = CURRENCY_EUR_PER_M3
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:fire"
+    _attr_suggested_display_precision = 3
+
+    def __init__(self, coordinator, entry, device_info) -> None:
+        super().__init__(coordinator, entry, device_info, "current_gas_price", "Current gas price")
+
+    @property
+    def native_value(self) -> float | None:
+        block = hour_for(self.data.gas_today, dt_util.now())
+        return block.price if block else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self.data
+        return {
+            "raw_today": _serialize(data.gas_today),
+            "raw_tomorrow": _serialize(data.gas_tomorrow),
+            "tomorrow_valid": data.gas_tomorrow_valid,
+        }
 
 
 class BudgetThuisPeriodSensor(BudgetThuisEntity, SensorEntity):

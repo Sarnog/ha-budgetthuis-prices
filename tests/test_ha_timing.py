@@ -25,7 +25,13 @@ AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 DAY_1 = date(2026, 7, 29)
 DAY_2 = DAY_1 + timedelta(days=1)
 ENERGY_TAX = 0.1
-NO_SURCHARGES = {"inkoopvergoeding": 0.0, "vat_percent": 0.0, "beursprijs_markup": 0.0}
+GAS_INKOOPVERGOEDING = 0.05
+NO_SURCHARGES = {
+    "inkoopvergoeding": 0.0,
+    "vat_percent": 0.0,
+    "beursprijs_markup": 0.0,
+    "gas_inkoopvergoeding": GAS_INKOOPVERGOEDING,
+}
 
 
 def _commodity(day: date, hour: int) -> float:
@@ -129,3 +135,41 @@ async def test_current_price_rolls_over_at_midnight(hass, setup_integration, fre
         _commodity(DAY_2, 0) + ENERGY_TAX
     )
 
+
+async def test_gas_price_switches_at_six_with_its_own_inkoopvergoeding(
+    hass, setup_integration, freezer
+) -> None:
+    await setup_integration(_local(DAY_1, 5, 37))
+    entity_id = "sensor.budget_thuis_dynamic_prices_current_gas_price"
+    # 00:00-06:00 still carries the previous gas day's price.
+    assert _price(hass, entity_id) == pytest.approx(0.9 + 0.6 + GAS_INKOOPVERGOEDING)
+    assert hass.states.get(entity_id).attributes["unit_of_measurement"] == "EUR/m³"
+
+    await _move_to(hass, freezer, _local(DAY_1, 6, 0, 1))
+
+    assert _price(hass, entity_id) == pytest.approx(1.0 + 0.6 + GAS_INKOOPVERGOEDING)
+    assert hass.states.get(entity_id).attributes["tomorrow_valid"] is True
+
+
+async def test_clock_survives_an_options_reload(hass, setup_integration, freezer) -> None:
+    """Changing options reloads the entry; the new entry must get its own clock."""
+    await setup_integration(_local(DAY_1, 5, 10))
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+
+    hass.config_entries.async_update_entry(
+        entry, options={**NO_SURCHARGES, "gas_inkoopvergoeding": 0.2}
+    )
+    await hass.async_block_till_done()
+    await _move_to(hass, freezer, _local(DAY_1, 6, 0, 1))
+
+    assert _price(hass, "sensor.budget_thuis_dynamic_prices_current_gas_price") == pytest.approx(
+        1.0 + 0.6 + 0.2
+    )
+    assert _price(hass, "sensor.budget_thuis_dynamic_prices_current_price") == pytest.approx(
+        _commodity(DAY_1, 6) + ENERGY_TAX
+    )
+
+    # After unloading, a later tick must not touch the (now gone) coordinator.
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await _move_to(hass, freezer, _local(DAY_1, 7, 0, 1))
+    assert hass.states.get("sensor.budget_thuis_dynamic_prices_current_price").state == "unavailable"

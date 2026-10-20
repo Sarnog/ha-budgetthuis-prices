@@ -15,6 +15,12 @@ from .const import NEXT_DATA_PATTERN
 
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 
+# Keys of the per-day tariff lists in the page payload. Electricity comes in
+# hourly blocks; gas in two blocks per calendar day (00:00-06:00, still the
+# previous gas day's price, and 06:00-24:00), since a gas day starts at 06:00.
+ELECTRICITY = "ElectricityTariffs"
+GAS = "GasTariffs"
+
 
 class TariffParseError(Exception):
     """Raised when the tariff page can't be parsed into hourly prices."""
@@ -22,7 +28,7 @@ class TariffParseError(Exception):
 
 @dataclass
 class HourPrice:
-    """A single hour's tariff."""
+    """A single tariff block: one hour for electricity, a part of the day for gas."""
 
     start: datetime
     end: datetime
@@ -36,8 +42,11 @@ def _parse_local_timestamp(value: str) -> datetime:
     return datetime.fromisoformat(value).replace(tzinfo=AMSTERDAM)
 
 
-def parse_tariff_days(html: str) -> dict[str, list[HourPrice]]:
-    """Parse the __NEXT_DATA__ payload embedded in the tariff page into per-day hourly prices.
+def parse_tariff_days(html: str, tariff_key: str = ELECTRICITY) -> dict[str, list[HourPrice]]:
+    """Parse the __NEXT_DATA__ payload embedded in the tariff page into per-day prices.
+
+    tariff_key selects the commodity (ELECTRICITY or GAS). A page without any
+    entries for that commodity yields an empty dict, not an error.
 
     Mirrors the extraction already proven in the arandu project's
     node/src/providers/price-provider.js `fetchBudgetThuis`.
@@ -57,7 +66,7 @@ def parse_tariff_days(html: str) -> dict[str, list[HourPrice]]:
 
     by_date: dict[str, list[HourPrice]] = {}
     for day in tariff_days:
-        tariffs = day.get("ElectricityTariffs")
+        tariffs = day.get(tariff_key)
         if not isinstance(tariffs, list):
             continue
 

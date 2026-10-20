@@ -28,6 +28,7 @@ ATTR_TOMORROW = "tomorrow"
 ATTR_TOMORROW_VALID = "tomorrow_valid"
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
+CURRENCY_EUR_PER_M3 = "EUR/m³"
 
 # Contract-pricing options (Home Assistant options flow), mirroring the
 # breakdown shown in the Budget Thuis app's own tariff screen: beursprijs
@@ -40,9 +41,14 @@ CURRENCY_EUR_PER_KWH = "EUR/kWh"
 CONF_INKOOPVERGOEDING = "inkoopvergoeding"
 CONF_VAT_PERCENT = "vat_percent"
 CONF_BEURSPRIJS_MARKUP = "beursprijs_markup"
+# Gas has its own inkoopvergoeding (EUR/m³); BTW is shared with electricity.
+CONF_GAS_INKOOPVERGOEDING = "gas_inkoopvergoeding"
 
 # Starting points only - match these to your own contract's tariff breakdown
 # in the Budget Thuis app, they're not guaranteed accurate for every contract.
 DEFAULT_INKOOPVERGOEDING = 0.01682
 DEFAULT_VAT_PERCENT = 21.0
 DEFAULT_BEURSPRIJS_MARKUP = 0.0
+# No reliable public figure exists for the gas inkoopvergoeding, so this
+# defaults to 0 rather than a guess - enter the value from your own app.
+DEFAULT_GAS_INKOOPVERGOEDING = 0.0

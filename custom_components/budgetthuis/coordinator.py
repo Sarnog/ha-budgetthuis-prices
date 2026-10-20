@@ -14,9 +14,11 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_BEURSPRIJS_MARKUP,
+    CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
+    DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
     DOMAIN,
@@ -24,7 +26,7 @@ from .const import (
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
-from .parser import AMSTERDAM, HourPrice, TariffParseError, parse_tariff_days
+from .parser import AMSTERDAM, ELECTRICITY, GAS, HourPrice, TariffParseError, parse_tariff_days
 from .pricing import ContractConfig, calculate_price
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,6 +58,7 @@ class BudgetThuisData:
     """
 
     electricity: dict[str, list[PricedHour]]
+    gas: dict[str, list[PricedHour]]
 
     @staticmethod
     def _day(by_date: dict[str, list[PricedHour]], offset: int) -> list[PricedHour]:
@@ -73,6 +76,18 @@ class BudgetThuisData:
     def tomorrow_valid(self) -> bool:
         return len(self.tomorrow) > 0
 
+    @property
+    def gas_today(self) -> list[PricedHour]:
+        return self._day(self.gas, 0)
+
+    @property
+    def gas_tomorrow(self) -> list[PricedHour]:
+        return self._day(self.gas, 1)
+
+    @property
+    def gas_tomorrow_valid(self) -> bool:
+        return len(self.gas_tomorrow) > 0
+
 
 def _contract_config(entry: ConfigEntry) -> ContractConfig:
     options = entry.options
@@ -80,6 +95,15 @@ def _contract_config(entry: ConfigEntry) -> ContractConfig:
         inkoopvergoeding=options.get(CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING),
         vat_percent=options.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT),
         beursprijs_markup=options.get(CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP),
+    )
+
+
+def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
+    """Gas has its own inkoopvergoeding; the beursprijs correction is electricity-only."""
+    options = entry.options
+    return ContractConfig(
+        inkoopvergoeding=options.get(CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING),
+        vat_percent=options.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT),
     )
 
 
@@ -100,7 +124,7 @@ def _price_days(by_date: dict[str, list[HourPrice]], config: ContractConfig) -> 
 
 
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
-    """Fetches Budget Thuis dynamic electricity tariffs and prices them for the customer's contract."""
+    """Fetches Budget Thuis dynamic electricity and gas tariffs and prices them for the customer's contract."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
@@ -138,10 +162,12 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             raise UpdateFailed(f"Error fetching tariff page: {err}") from err
 
         try:
-            electricity = parse_tariff_days(html)
+            electricity = parse_tariff_days(html, ELECTRICITY)
+            gas = parse_tariff_days(html, GAS)
         except TariffParseError as err:
             raise UpdateFailed(str(err)) from err
 
         return BudgetThuisData(
             electricity=_price_days(electricity, _contract_config(self.entry)),
+            gas=_price_days(gas, _gas_contract_config(self.entry)),
         )
