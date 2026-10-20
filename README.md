@@ -9,10 +9,10 @@ Reads the public tariff page
 directly — no account, login, or API key needed. Rather than trust the site's own displayed
 all-in price (which reflects Budget Thuis's generic published figure, not necessarily your
 specific contract), the integration recomputes the price itself from the live per-hour
-beursprijs and energiebelasting (both published on the tariff page) plus your own contract's
-inkoopvergoeding and BTW — the exact breakdown shown on the tariff screen in the Budget Thuis
-app. Configure your inkoopvergoeding via Settings → Devices & Services → Budget Thuis Dynamic
-Prices → Configure.
+beursprijs and energiebelasting (both published on the tariff page) plus BTW and your own
+contract's inkoopvergoeding — the exact breakdown shown on the tariff screen in the Budget
+Thuis app. Configure your inkoopvergoeding via Settings → Devices & Services → Budget Thuis
+Dynamic Prices → Configure.
 
 ## Entities
 
@@ -61,25 +61,24 @@ Configurable via the integration's "Configure" option (Settings → Devices & Se
 
 | Field | Meaning | Default |
 |---|---|---|
-| Inkoopvergoeding | Purchasing fee (EUR/kWh) | 0.01682 |
+| Inkoopvergoeding electricity | Purchasing fee (EUR/kWh), **including BTW**, as shown in the app | 0.016822 |
 | BTW | VAT (%) | 21 |
 | Beursprijs adjustment | Extra correction on top of the live beursprijs (EUR/kWh) — beursprijs itself is always fetched automatically, this is **not** where you enter it; leave at 0 unless you have a specific reason | 0 |
-| Gas inkoopvergoeding | Purchasing fee on gas (EUR/m³) | 0 |
+| Inkoopvergoeding gas | Purchasing fee on gas (EUR/m³), **including BTW**, as shown in the app | 0.06413 |
 
-Price formula: `(beursprijs + beursprijs_adjustment + inkoopvergoeding + energiebelasting) × (1 + btw / 100)`.
+Price formula: `(beursprijs + beursprijs_adjustment + energiebelasting) × (1 + btw / 100) + inkoopvergoeding`.
 
-Gas uses the same formula with its own beursprijs and energiebelasting per m³ (both read live
-from the tariff page), the gas inkoopvergoeding and the same BTW; the beursprijs adjustment
-only applies to electricity. There's no reliable public figure for the gas inkoopvergoeding,
-so it defaults to 0 — at 0 the gas price equals Budget Thuis's own displayed figure. Enter
-the value from your gas tariff breakdown in the Budget Thuis app to get your real price.
+The inkoopvergoeding is entered including BTW because that's how the Budget Thuis app shows
+it, so it's added after BTW rather than taxed a second time. Gas uses the same formula with
+its own beursprijs and energiebelasting per m³ (both read live from the tariff page), the gas
+inkoopvergoeding and the same BTW; the beursprijs adjustment only applies to electricity.
 
 Energiebelasting isn't a configurable field — it's a government-set tax rate (the same for
 every energy supplier), and its net amount is already published per hour on the tariff page,
-so it's read live rather than guessed. Inkoopvergoeding is the one number that's genuinely
-specific to your contract and isn't published anywhere public; **the default is a starting
-point, not guaranteed to match your contract** — read the real value off your own tariff
-breakdown in the Budget Thuis app and enter that instead. Changing these options reloads the
+so it's read live rather than guessed. The inkoopvergoeding (one for electricity, one for gas)
+is the part that's genuinely specific to your contract; **the defaults are a starting point,
+not guaranteed to match your contract** — read the real values (including BTW) off your own
+tariff breakdown in the Budget Thuis app and enter those instead. Changing these options reloads the
 integration and recalculates immediately, no restart needed.
 
 ## Installation
