@@ -54,6 +54,8 @@ Entity states follow the clock, not the moment of the last fetch: every price se
 to the new price exactly on the hour (and the gas price at 06:00), and "today" becomes the
 next day at midnight — no matter when Home Assistant or the integration was started. The
 tariff page itself is fetched once an hour; the switch-over only re-reads that cached data.
+This also holds on the daylight saving time changeovers: in autumn the repeated 02:00–03:00
+hour gets its own price, in spring the missing hour is simply skipped.
 
 ## Contract pricing
 
