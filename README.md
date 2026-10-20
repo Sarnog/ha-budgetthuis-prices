@@ -1,8 +1,8 @@
 # Budget Thuis Dynamic Prices
 
 Home Assistant custom integration that exposes [Budget Thuis](https://www.budgetthuis.nl/)'s
-dynamic electricity tariffs as sensors, so you can automate around cheap/expensive hours
-(battery charging, EV charging, appliance scheduling, etc.).
+dynamic electricity and gas tariffs as sensors, so you can automate around cheap/expensive
+hours (battery charging, EV charging, appliance scheduling, etc.).
 
 Reads the public tariff page
 [`/energie/klantenservice/actuele-dynamische-tarieven`](https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven)
@@ -16,7 +16,7 @@ Prices → Configure.
 
 ## Entities
 
-One device, seven sensors and a binary sensor:
+One device, eight sensors and a binary sensor:
 
 - **Current price** (`sensor.current_price`) — this hour's customer-contract-accurate price
   (EUR/kWh). Carries the full hourly breakdown as attributes: `raw_today`, `raw_tomorrow`
@@ -40,10 +40,20 @@ One device, seven sensors and a binary sensor:
 - **Cheap hour** (`binary_sensor.cheap_hour`) — on whenever the current price is at or below
   today's average. A no-configuration building block for "run this when it's cheap"
   automations that doesn't require templating `raw_today` yourself.
+- **Current gas price** (`sensor.current_gas_price`) — the current customer-contract-accurate
+  gas price (EUR/m³). Gas is priced per gas day, which runs from 06:00 to 06:00, so this
+  changes once a day at 06:00. Carries `raw_today`, `raw_tomorrow` (the 00:00–06:00 and
+  06:00–24:00 blocks, each with `price` and `site_price`) and `tomorrow_valid` as attributes.
+  Stays unknown if your tariff page carries no gas prices; disable it if you don't have gas.
 
 Tomorrow's prices are only published by Budget Thuis in the afternoon; until then
 `raw_tomorrow` is empty and `tomorrow_valid` is `false` — the period/lowest/highest sensors
 only ever look at today's data.
+
+Entity states follow the clock, not the moment of the last fetch: every price sensor moves
+to the new price exactly on the hour (and the gas price at 06:00), and "today" becomes the
+next day at midnight — no matter when Home Assistant or the integration was started. The
+tariff page itself is fetched once an hour; the switch-over only re-reads that cached data.
 
 ## Contract pricing
 
@@ -54,8 +64,15 @@ Configurable via the integration's "Configure" option (Settings → Devices & Se
 | Inkoopvergoeding | Purchasing fee (EUR/kWh) | 0.01682 |
 | BTW | VAT (%) | 21 |
 | Beursprijs adjustment | Extra correction on top of the live beursprijs (EUR/kWh) — beursprijs itself is always fetched automatically, this is **not** where you enter it; leave at 0 unless you have a specific reason | 0 |
+| Gas inkoopvergoeding | Purchasing fee on gas (EUR/m³) | 0 |
 
 Price formula: `(beursprijs + beursprijs_adjustment + inkoopvergoeding + energiebelasting) × (1 + btw / 100)`.
+
+Gas uses the same formula with its own beursprijs and energiebelasting per m³ (both read live
+from the tariff page), the gas inkoopvergoeding and the same BTW; the beursprijs adjustment
+only applies to electricity. There's no reliable public figure for the gas inkoopvergoeding,
+so it defaults to 0 — at 0 the gas price equals Budget Thuis's own displayed figure. Enter
+the value from your gas tariff breakdown in the Budget Thuis app to get your real price.
 
 Energiebelasting isn't a configurable field — it's a government-set tax rate (the same for
 every energy supplier), and its net amount is already published per hour on the tariff page,
@@ -90,8 +107,16 @@ python3 -m venv .venv
 average/lowest/highest and the cheapest/most-expensive period search) have no Home Assistant
 import, so they're covered by plain pytest (`tests/test_parser.py`, `tests/test_pricing.py`,
 `tests/test_stats.py`). `coordinator.py`, `config_flow.py`, `sensor.py`, `binary_sensor.py`,
-and `helpers.py` are thin Home Assistant glue around those and are best exercised with
-`pytest-homeassistant-custom-component` in an actual HA dev environment — not included here.
+and `helpers.py` are thin Home Assistant glue around those.
+
+`tests/test_ha_timing.py` sets the integration up in a real Home Assistant test instance and
+checks that prices switch on the hour, at midnight and (for gas) at 06:00. It needs
+`pytest-homeassistant-custom-component` and is skipped automatically without it:
+
+```
+.venv/bin/pip install pytest-homeassistant-custom-component
+.venv/bin/pytest tests/ -v -o asyncio_mode=auto
+```
 
 ## Before publishing
 
