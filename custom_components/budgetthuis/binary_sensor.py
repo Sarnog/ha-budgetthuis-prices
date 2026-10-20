@@ -1,4 +1,5 @@
 """Binary sensor platform for Budget Thuis Dynamic Prices."""
+
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
@@ -22,10 +23,14 @@ async def async_setup_entry(
     coordinator: BudgetThuisCoordinator = hass.data[DOMAIN][entry.entry_id]
     device_info = get_device_info(entry)
 
-    async_add_entities([BudgetThuisCheapHourBinarySensor(coordinator, entry, device_info)])
+    async_add_entities(
+        [BudgetThuisCheapHourBinarySensor(coordinator, entry, device_info)]
+    )
 
 
-class BudgetThuisCheapHourBinarySensor(CoordinatorEntity[BudgetThuisCoordinator], BinarySensorEntity):
+class BudgetThuisCheapHourBinarySensor(
+    CoordinatorEntity[BudgetThuisCoordinator], BinarySensorEntity
+):
     """On whenever the current hour's price is at or below today's average.
 
     A no-configuration heuristic for "is now a good time to run something",
@@ -35,7 +40,12 @@ class BudgetThuisCheapHourBinarySensor(CoordinatorEntity[BudgetThuisCoordinator]
     _attr_has_entity_name = True
     _attr_icon = "mdi:cash-check"
 
-    def __init__(self, coordinator: BudgetThuisCoordinator, entry: ConfigEntry, device_info: DeviceInfo) -> None:
+    def __init__(
+        self,
+        coordinator: BudgetThuisCoordinator,
+        entry: ConfigEntry,
+        device_info: DeviceInfo,
+    ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_cheap_hour"
         self._attr_translation_key = "cheap_hour"

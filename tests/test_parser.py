@@ -3,13 +3,18 @@
 Deliberately imports only custom_components.budgetthuis.parser (no Home
 Assistant dependency), so these run with plain pytest.
 """
+
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from custom_components.budgetthuis.parser import GAS, TariffParseError, parse_tariff_days
+from custom_components.budgetthuis.parser import (
+    GAS,
+    TariffParseError,
+    parse_tariff_days,
+)
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "tariff_page.html"
 
@@ -52,15 +57,16 @@ def test_missing_next_data_raises() -> None:
 
 
 def test_malformed_json_raises() -> None:
-    html = (
-        '<script id="__NEXT_DATA__" type="application/json">{not valid json</script>'
-    )
+    html = '<script id="__NEXT_DATA__" type="application/json">{not valid json</script>'
     with pytest.raises(TariffParseError, match="Malformed __NEXT_DATA__"):
         parse_tariff_days(html)
 
 
 def test_missing_tariff_days_raises() -> None:
-    html = '<script id="__NEXT_DATA__" type="application/json">{"props": {"pageProps": {}}}</script>'
+    html = (
+        '<script id="__NEXT_DATA__" type="application/json">'
+        '{"props": {"pageProps": {}}}</script>'
+    )
     with pytest.raises(TariffParseError, match="No tariffDays"):
         parse_tariff_days(html)
 
@@ -99,7 +105,9 @@ def test_page_without_gas_yields_no_gas_days() -> None:
 # jumps forward (02:00-03:00 doesn't exist, 23 hours).
 
 
-def _dst_page(entries: list[tuple[str, str, float]], key: str = "ElectricityTariffs") -> str:
+def _dst_page(
+    entries: list[tuple[str, str, float]], key: str = "ElectricityTariffs"
+) -> str:
     tariffs = [
         {
             "Start": start,
@@ -141,7 +149,9 @@ def _assert_contiguous_utc_hours(blocks, first_utc: str) -> None:
 @pytest.mark.parametrize("first_repeat_end", [3, 2])
 def test_autumn_changeover_keeps_both_0200_hours(first_repeat_end: int) -> None:
     """Both spellings of the first 02:00 block's end ("03:00" or "02:00")."""
-    blocks = parse_tariff_days(_dst_page(_autumn_entries(first_repeat_end)))["2026-10-25"]
+    blocks = parse_tariff_days(_dst_page(_autumn_entries(first_repeat_end)))[
+        "2026-10-25"
+    ]
 
     assert len(blocks) == 25
     assert [b.price for b in blocks] == [float(i) for i in range(25)]

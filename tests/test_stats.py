@@ -2,12 +2,11 @@
 
 No Home Assistant dependency, same as test_parser.py/test_pricing.py.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-
-import pytest
+from datetime import UTC, datetime, timedelta
 
 from custom_components.budgetthuis.stats import (
     average,
@@ -29,9 +28,13 @@ class _Hour:
 
 
 def _hours(*prices: float | None) -> list[_Hour]:
-    base = datetime(2026, 7, 29, 0, 0, tzinfo=timezone.utc)
+    base = datetime(2026, 7, 29, 0, 0, tzinfo=UTC)
     return [
-        _Hour(start=base + timedelta(hours=i), end=base + timedelta(hours=i + 1), price=price)
+        _Hour(
+            start=base + timedelta(hours=i),
+            end=base + timedelta(hours=i + 1),
+            price=price,
+        )
         for i, price in enumerate(prices)
     ]
 
@@ -65,7 +68,8 @@ def test_average_lowest_highest_of_empty_or_all_missing() -> None:
 
 
 def test_cheapest_period_picks_the_lowest_average_run() -> None:
-    # average = 0.2; two below-average runs: [0.1] and [0.05, 0.1] - the second has the lower average.
+    # average = 0.2; two below-average runs: [0.1] and [0.05, 0.1] - the
+    # second has the lower average.
     hours = _hours(0.1, 0.3, 0.05, 0.1, 0.4)
 
     start, end, run_average = cheapest_period(hours)
@@ -76,7 +80,8 @@ def test_cheapest_period_picks_the_lowest_average_run() -> None:
 
 
 def test_most_expensive_period_picks_the_highest_average_run() -> None:
-    # average = 0.2; two above-average runs: [0.3] and [0.5, 0.4] - the second has the higher average.
+    # average = 0.2; two above-average runs: [0.3] and [0.5, 0.4] - the
+    # second has the higher average.
     hours = _hours(0.3, 0.1, 0.05, 0.5, 0.4)
 
     start, end, run_average = most_expensive_period(hours)
@@ -96,7 +101,8 @@ def test_most_expensive_period_none_when_every_hour_is_identical() -> None:
     hours = _hours(0.2, 0.2, 0.2)
 
     assert most_expensive_period(hours) is None
-    # But the whole day is a (tied) below-average run, so cheapest_period still finds it.
+    # But the whole day is a (tied) below-average run, so cheapest_period
+    # still finds it.
     start, end, run_average = cheapest_period(hours)
     assert start == hours[0].start
     assert end == hours[-1].end
@@ -121,5 +127,9 @@ def test_hour_for_tells_the_repeated_autumn_hour_apart() -> None:
     after = datetime(2026, 10, 25, 3, 0, tzinfo=ams)
     hours = [_Hour(summer, winter, 0.1), _Hour(winter, after, 0.2)]
 
-    assert hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=0)).price == 0.1
-    assert hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=1)).price == 0.2
+    assert (
+        hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=0)).price == 0.1
+    )
+    assert (
+        hour_for(hours, datetime(2026, 10, 25, 2, 30, tzinfo=ams, fold=1)).price == 0.2
+    )

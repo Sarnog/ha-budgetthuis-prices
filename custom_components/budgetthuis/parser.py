@@ -3,6 +3,7 @@
 Deliberately free of any Home Assistant import so it can be unit tested with
 plain pytest, independent of whatever HA dev environment is available.
 """
+
 from __future__ import annotations
 
 import json
@@ -92,7 +93,9 @@ def _clip_overlaps(blocks: list[HourPrice]) -> None:
             block.end = following.start
 
 
-def parse_tariff_days(html: str, tariff_key: str = ELECTRICITY) -> dict[str, list[HourPrice]]:
+def parse_tariff_days(
+    html: str, tariff_key: str = ELECTRICITY
+) -> dict[str, list[HourPrice]]:
     """Parse the __NEXT_DATA__ payload embedded in the tariff page into per-day prices.
 
     tariff_key selects the commodity (ELECTRICITY or GAS). A page without any

@@ -1,4 +1,5 @@
 """Sensor platform for Budget Thuis Dynamic Prices."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -15,7 +16,14 @@ from homeassistant.util import dt as dt_util
 from .const import CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3, DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
 from .helpers import device_info as get_device_info
-from .stats import average, cheapest_period, highest, hour_for, lowest, most_expensive_period
+from .stats import (
+    average,
+    cheapest_period,
+    highest,
+    hour_for,
+    lowest,
+    most_expensive_period,
+)
 
 
 def _serialize(hours: list[PricedHour]) -> list[dict]:
@@ -88,7 +96,9 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
     """Current hour's customer-contract-accurate electricity price."""
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "current_price", "Current price")
+        super().__init__(
+            coordinator, entry, device_info, "current_price", "Current price"
+        )
 
     @property
     def native_value(self) -> float | None:
@@ -112,19 +122,26 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
 
 
 class BudgetThuisNextHourPriceSensor(BudgetThuisBaseSensor):
-    """Next hour's customer-contract-accurate price, spanning into tomorrow's data once published."""
+    """Next hour's customer-contract-accurate price.
+
+    Spans into tomorrow's data once that's published.
+    """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "next_hour_price", "Next hour price")
+        super().__init__(
+            coordinator, entry, device_info, "next_hour_price", "Next hour price"
+        )
 
     @property
     def native_value(self) -> float | None:
         # utcnow(): adding an hour to a local time is wall-clock arithmetic,
         # which skips or repeats an hour around the DST changeovers.
         next_hour = dt_util.utcnow() + timedelta(hours=1)
-        hour = hour_for(self.data.today, next_hour) or hour_for(self.data.tomorrow, next_hour)
+        hour = hour_for(self.data.today, next_hour) or hour_for(
+            self.data.tomorrow, next_hour
+        )
         return hour.price if hour else None
 
 
@@ -134,7 +151,13 @@ class BudgetThuisTodayAveragePriceSensor(BudgetThuisBaseSensor):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "today_average_price", "Today average price")
+        super().__init__(
+            coordinator,
+            entry,
+            device_info,
+            "today_average_price",
+            "Today average price",
+        )
 
     @property
     def native_value(self) -> float | None:
@@ -147,7 +170,9 @@ class BudgetThuisLowestPriceTodaySensor(BudgetThuisBaseSensor):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "lowest_price_today", "Lowest price today")
+        super().__init__(
+            coordinator, entry, device_info, "lowest_price_today", "Lowest price today"
+        )
 
     @property
     def native_value(self) -> float | None:
@@ -160,7 +185,13 @@ class BudgetThuisHighestPriceTodaySensor(BudgetThuisBaseSensor):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "highest_price_today", "Highest price today")
+        super().__init__(
+            coordinator,
+            entry,
+            device_info,
+            "highest_price_today",
+            "Highest price today",
+        )
 
     @property
     def native_value(self) -> float | None:
@@ -181,7 +212,9 @@ class BudgetThuisCurrentGasPriceSensor(BudgetThuisEntity, SensorEntity):
     _attr_suggested_display_precision = 3
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "current_gas_price", "Current gas price")
+        super().__init__(
+            coordinator, entry, device_info, "current_gas_price", "Current gas price"
+        )
 
     @property
     def native_value(self) -> float | None:
@@ -228,14 +261,24 @@ class BudgetThuisPeriodSensor(BudgetThuisEntity, SensorEntity):
         if period is None:
             return {}
         start, end, average_price = period
-        return {"start": start.isoformat(), "end": end.isoformat(), "average_price": average_price}
+        return {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "average_price": average_price,
+        }
 
 
 class BudgetThuisCheapestPeriodTodaySensor(BudgetThuisPeriodSensor):
     """Start of today's cheapest consecutive run of below-average hours."""
 
     def __init__(self, coordinator, entry, device_info) -> None:
-        super().__init__(coordinator, entry, device_info, "cheapest_period_today", "Cheapest period today")
+        super().__init__(
+            coordinator,
+            entry,
+            device_info,
+            "cheapest_period_today",
+            "Cheapest period today",
+        )
 
     def _period(self):
         return cheapest_period(self.data.today)
@@ -246,7 +289,11 @@ class BudgetThuisMostExpensivePeriodTodaySensor(BudgetThuisPeriodSensor):
 
     def __init__(self, coordinator, entry, device_info) -> None:
         super().__init__(
-            coordinator, entry, device_info, "most_expensive_period_today", "Most expensive period today"
+            coordinator,
+            entry,
+            device_info,
+            "most_expensive_period_today",
+            "Most expensive period today",
         )
 
     def _period(self):

@@ -11,6 +11,7 @@ When Home Assistant *is* installed (with pytest-homeassistant-custom-component,
 for `tests/test_ha_timing.py`), the real package is left importable instead,
 so Home Assistant can load the integration's `__init__.py` normally.
 """
+
 import importlib.util
 import sys
 import types

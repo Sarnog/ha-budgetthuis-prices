@@ -1,0 +1,7 @@
+# Lint + format settings, so `ruff check` / `ruff format` give the same result
+# locally and in CI.
+target-version = "py312"
+line-length = 88
+
+[lint]
+select = ["E", "F", "W", "I", "UP"]

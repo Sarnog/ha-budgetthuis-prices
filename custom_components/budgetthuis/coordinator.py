@@ -1,4 +1,5 @@
 """Data update coordinator for Budget Thuis Dynamic Prices."""
+
 from __future__ import annotations
 
 import logging
@@ -26,7 +27,14 @@ from .const import (
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
-from .parser import AMSTERDAM, ELECTRICITY, GAS, HourPrice, TariffParseError, parse_tariff_days
+from .parser import (
+    AMSTERDAM,
+    ELECTRICITY,
+    GAS,
+    HourPrice,
+    TariffParseError,
+    parse_tariff_days,
+)
 from .pricing import ContractConfig, calculate_price
 
 _LOGGER = logging.getLogger(__name__)
@@ -94,15 +102,19 @@ def _contract_config(entry: ConfigEntry) -> ContractConfig:
     return ContractConfig(
         inkoopvergoeding=options.get(CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING),
         vat_percent=options.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT),
-        beursprijs_markup=options.get(CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP),
+        beursprijs_markup=options.get(
+            CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP
+        ),
     )
 
 
 def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
-    """Gas has its own inkoopvergoeding; the beursprijs correction is electricity-only."""
+    """Gas: own inkoopvergoeding, shared BTW, no beursprijs correction."""
     options = entry.options
     return ContractConfig(
-        inkoopvergoeding=options.get(CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING),
+        inkoopvergoeding=options.get(
+            CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING
+        ),
         vat_percent=options.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT),
     )
 
@@ -119,12 +131,17 @@ def _price_hours(hours: list[HourPrice], config: ContractConfig) -> list[PricedH
     ]
 
 
-def _price_days(by_date: dict[str, list[HourPrice]], config: ContractConfig) -> dict[str, list[PricedHour]]:
+def _price_days(
+    by_date: dict[str, list[HourPrice]], config: ContractConfig
+) -> dict[str, list[PricedHour]]:
     return {day: _price_hours(hours, config) for day, hours in by_date.items()}
 
 
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
-    """Fetches Budget Thuis dynamic electricity and gas tariffs and prices them for the customer's contract."""
+    """Fetches Budget Thuis dynamic electricity and gas tariffs.
+
+    The tariffs are priced for the customer's own contract (see pricing.py).
+    """
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
@@ -138,7 +155,9 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
 
     @callback
     def async_start_price_clock(self) -> CALLBACK_TYPE:
-        """Re-evaluate entity states on every price boundary; returns the unsubscribe callback.
+        """Re-evaluate entity states on every price boundary.
+
+        Returns the unsubscribe callback.
 
         See PRICE_TICK_MINUTES: the fetch itself stays on its own interval,
         this only lets entities re-read the cached data at the right moment.

@@ -5,10 +5,12 @@ end, price) - PricedHour itself is only imported for type checking, so this
 module carries no Home Assistant dependency and is unit testable with plain
 pytest, same as parser.py/pricing.py.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .coordinator import PricedHour
@@ -48,7 +50,9 @@ def highest(hours: list[PricedHour]) -> float | None:
     return max(priced(hours), default=None)
 
 
-def _runs(hours: list[PricedHour], predicate: Callable[[float], bool]) -> list[list[PricedHour]]:
+def _runs(
+    hours: list[PricedHour], predicate: Callable[[float], bool]
+) -> list[list[PricedHour]]:
     """Group hours into maximal consecutive runs matching predicate(price)."""
     runs: list[list[PricedHour]] = []
     current: list[PricedHour] = []
@@ -88,7 +92,9 @@ def cheapest_period(hours: list[PricedHour]) -> tuple[datetime, datetime, float]
     return _period(cheapest_run)
 
 
-def most_expensive_period(hours: list[PricedHour]) -> tuple[datetime, datetime, float] | None:
+def most_expensive_period(
+    hours: list[PricedHour],
+) -> tuple[datetime, datetime, float] | None:
     """The consecutive above-average run with the highest average price.
 
     Mirror of cheapest_period(). Returns None if there's no priced data, or

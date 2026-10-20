@@ -10,6 +10,7 @@ amount per hour (EnergyTax.AmountNet) - so unlike inkoopvergoeding, there's
 nothing customer-specific to configure for it. Kept free of Home Assistant
 imports so it's unit testable with plain pytest, same as parser.py.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

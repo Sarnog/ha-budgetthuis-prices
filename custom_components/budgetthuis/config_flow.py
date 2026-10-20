@@ -1,4 +1,5 @@
 """Config and options flow for Budget Thuis Dynamic Prices."""
+
 from __future__ import annotations
 
 import voluptuous as vol
@@ -48,7 +49,7 @@ class BudgetThuisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
-    """Lets the customer match the calculation to their own contract's tariff breakdown."""
+    """Lets the customer match the calculation to their contract's tariff breakdown."""
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
@@ -59,7 +60,9 @@ class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
             {
                 vol.Required(
                     CONF_INKOOPVERGOEDING,
-                    default=options.get(CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING),
+                    default=options.get(
+                        CONF_INKOOPVERGOEDING, DEFAULT_INKOOPVERGOEDING
+                    ),
                 ): vol.Coerce(float),
                 vol.Required(
                     CONF_VAT_PERCENT,
@@ -67,11 +70,15 @@ class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
                 ): vol.Coerce(float),
                 vol.Optional(
                     CONF_BEURSPRIJS_MARKUP,
-                    default=options.get(CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP),
+                    default=options.get(
+                        CONF_BEURSPRIJS_MARKUP, DEFAULT_BEURSPRIJS_MARKUP
+                    ),
                 ): vol.Coerce(float),
                 vol.Optional(
                     CONF_GAS_INKOOPVERGOEDING,
-                    default=options.get(CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING),
+                    default=options.get(
+                        CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING
+                    ),
                 ): vol.Coerce(float),
             }
         )

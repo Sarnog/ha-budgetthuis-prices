@@ -1,13 +1,14 @@
 """Constants for the Budget Thuis Dynamic Prices integration."""
+
 from datetime import timedelta
 
 DOMAIN = "budgetthuis"
 
-TARIFF_URL = "https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven"
-
-NEXT_DATA_PATTERN = (
-    r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>'
+TARIFF_URL = (
+    "https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven"
 )
+
+NEXT_DATA_PATTERN = r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>'
 
 # Budget Thuis publishes tomorrow's tariffs in the afternoon, same as the
 # day-ahead auction they're derived from. Polling hourly is enough to pick
@@ -33,11 +34,11 @@ CURRENCY_EUR_PER_M3 = "EUR/m³"
 # Contract-pricing options (Home Assistant options flow), mirroring the
 # breakdown shown in the Budget Thuis app's own tariff screen: beursprijs
 # (live per-hour, already parsed) + energiebelasting with 21% BTW on top,
-# plus the inkoopvergoeding, which the app already shows including BTW. energiebelasting is a government tax rate, not a
-# Budget Thuis one, and its net amount is already published per hour on the
-# tariff page - so it's read live (see pricing.py) rather than configured
-# here. "Stroom gemiddeld" in the app is just the resulting average all-in
-# price, not a separate input.
+# plus the inkoopvergoeding, which the app already shows including BTW.
+# energiebelasting is a government tax rate, not a Budget Thuis one, and its
+# net amount is already published per hour on the tariff page - so it's read
+# live (see pricing.py) rather than configured here. "Stroom gemiddeld" in the
+# app is just the resulting average all-in price, not a separate input.
 CONF_INKOOPVERGOEDING = "inkoopvergoeding"
 CONF_VAT_PERCENT = "vat_percent"
 CONF_BEURSPRIJS_MARKUP = "beursprijs_markup"
