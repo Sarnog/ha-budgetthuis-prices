@@ -100,9 +100,12 @@ directory and restart.
 
 ```
 python3 -m venv .venv
-.venv/bin/pip install -r requirements_test.txt
+.venv/bin/pip install -r requirements_test.txt ruff==0.16.2
+.venv/bin/ruff check . && .venv/bin/ruff format --check .
 .venv/bin/pytest tests/ -v
 ```
+
+Lint and formatting settings live in `ruff.toml`; CI runs the same `ruff` checks.
 
 `parser.py` (page parsing), `pricing.py` (the contract price formula), and `stats.py` (today's
 average/lowest/highest and the cheapest/most-expensive period search) have no Home Assistant
