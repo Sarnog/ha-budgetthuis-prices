@@ -14,6 +14,15 @@ NEXT_DATA_PATTERN = (
 # that up promptly without hammering the site.
 UPDATE_INTERVAL = timedelta(hours=1)
 
+# Entity states are re-evaluated on this wall-clock grid, independent of the
+# poll above: the poll's phase depends on when Home Assistant started (e.g.
+# 14:23, 15:23, ...), so relying on it alone left the previous hour's price
+# showing until the next poll. The page currently has hourly electricity and
+# 00:00/06:00 gas boundaries; ticking every quarter hour also covers a future
+# move to 15-minute electricity prices. Only the cached data is re-read, no
+# extra request is made.
+PRICE_TICK_MINUTES = (0, 15, 30, 45)
+
 ATTR_TODAY = "today"
 ATTR_TOMORROW = "tomorrow"
 ATTR_TOMORROW_VALID = "tomorrow_valid"

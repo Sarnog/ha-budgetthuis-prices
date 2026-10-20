@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -19,10 +20,11 @@ from .const import (
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
     DOMAIN,
+    PRICE_TICK_MINUTES,
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
-from .parser import HourPrice, TariffParseError, parse_tariff_days
+from .parser import AMSTERDAM, HourPrice, TariffParseError, parse_tariff_days
 from .pricing import ContractConfig, calculate_price
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,12 +41,33 @@ class PricedHour:
     site_price: float | None
 
 
+def _local_today() -> date:
+    """Today's date on the tariff page's own (Amsterdam) calendar."""
+    return dt_util.now(AMSTERDAM).date()
+
+
 @dataclass
 class BudgetThuisData:
-    """Priced tariff data for today and (if published) tomorrow."""
+    """Priced tariff data for every day on the page, keyed by ISO date.
 
-    today: list[PricedHour]
-    tomorrow: list[PricedHour]
+    "Today" and "tomorrow" are resolved against the clock whenever they're
+    read rather than fixed at fetch time, so at midnight yesterday's
+    "tomorrow" becomes today straight away instead of at the next poll.
+    """
+
+    electricity: dict[str, list[PricedHour]]
+
+    @staticmethod
+    def _day(by_date: dict[str, list[PricedHour]], offset: int) -> list[PricedHour]:
+        return by_date.get((_local_today() + timedelta(days=offset)).isoformat(), [])
+
+    @property
+    def today(self) -> list[PricedHour]:
+        return self._day(self.electricity, 0)
+
+    @property
+    def tomorrow(self) -> list[PricedHour]:
+        return self._day(self.electricity, 1)
 
     @property
     def tomorrow_valid(self) -> bool:
@@ -72,6 +95,10 @@ def _price_hours(hours: list[HourPrice], config: ContractConfig) -> list[PricedH
     ]
 
 
+def _price_days(by_date: dict[str, list[HourPrice]], config: ContractConfig) -> dict[str, list[PricedHour]]:
+    return {day: _price_hours(hours, config) for day, hours in by_date.items()}
+
+
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
     """Fetches Budget Thuis dynamic electricity tariffs and prices them for the customer's contract."""
 
@@ -79,10 +106,27 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=UPDATE_INTERVAL,
         )
         self.entry = entry
+
+    @callback
+    def async_start_price_clock(self) -> CALLBACK_TYPE:
+        """Re-evaluate entity states on every price boundary; returns the unsubscribe callback.
+
+        See PRICE_TICK_MINUTES: the fetch itself stays on its own interval,
+        this only lets entities re-read the cached data at the right moment.
+        """
+        return async_track_time_change(
+            self.hass, self._async_price_clock_tick, minute=PRICE_TICK_MINUTES, second=0
+        )
+
+    @callback
+    def _async_price_clock_tick(self, _now: datetime) -> None:
+        if self.data is not None:
+            self.async_update_listeners()
 
     async def _async_update_data(self) -> BudgetThuisData:
         session = async_get_clientsession(self.hass)
@@ -94,15 +138,10 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             raise UpdateFailed(f"Error fetching tariff page: {err}") from err
 
         try:
-            by_date = parse_tariff_days(html)
+            electricity = parse_tariff_days(html)
         except TariffParseError as err:
             raise UpdateFailed(str(err)) from err
 
-        today = dt_util.now().date()
-        tomorrow = today + timedelta(days=1)
-        config = _contract_config(self.entry)
-
         return BudgetThuisData(
-            today=_price_hours(by_date.get(today.isoformat(), []), config),
-            tomorrow=_price_hours(by_date.get(tomorrow.isoformat(), []), config),
+            electricity=_price_days(electricity, _contract_config(self.entry)),
         )
