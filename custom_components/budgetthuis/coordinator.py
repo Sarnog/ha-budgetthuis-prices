@@ -1,4 +1,4 @@
-"""Data update coordinator for Budget Thuis Dynamic Prices."""
+"""Coordinator die de tarieven van Budget Thuis ophaalt en prijst."""
 
 from __future__ import annotations
 
@@ -42,8 +42,8 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class PricedHour:
-    """One hour's price, both as Budget Thuis's own displayed figure and the
-    customer-contract-accurate figure computed from the live beursprijs."""
+    """De prijs van één blok: de prijs voor het eigen contract (price) en de
+    all-in prijs die Budget Thuis zelf toont (site_price)."""
 
     start: datetime
     end: datetime
@@ -52,17 +52,17 @@ class PricedHour:
 
 
 def _local_today() -> date:
-    """Today's date on the tariff page's own (Amsterdam) calendar."""
+    """De datum van vandaag op de (Amsterdamse) kalender van de tarievenpagina."""
     return dt_util.now(AMSTERDAM).date()
 
 
 @dataclass
 class BudgetThuisData:
-    """Priced tariff data for every day on the page, keyed by ISO date.
+    """Geprijsde tariefgegevens voor elke dag op de pagina, per ISO-datum.
 
-    "Today" and "tomorrow" are resolved against the clock whenever they're
-    read rather than fixed at fetch time, so at midnight yesterday's
-    "tomorrow" becomes today straight away instead of at the next poll.
+    "Vandaag" en "morgen" worden bij het uitlezen aan de klok gekoppeld in
+    plaats van bij het ophalen, zodat "morgen" van gisteren om middernacht
+    meteen "vandaag" wordt en niet pas bij de volgende ophaalronde.
     """
 
     electricity: dict[str, list[PricedHour]]
@@ -109,7 +109,7 @@ def _contract_config(entry: ConfigEntry) -> ContractConfig:
 
 
 def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
-    """Gas: own inkoopvergoeding, shared BTW, no beursprijs correction."""
+    """Gas: eigen inkoopvergoeding, gedeelde BTW, geen beursprijscorrectie."""
     options = entry.options
     return ContractConfig(
         inkoopvergoeding=options.get(
@@ -138,9 +138,9 @@ def _price_days(
 
 
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
-    """Fetches Budget Thuis dynamic electricity and gas tariffs.
+    """Haalt de dynamische stroom- en gastarieven van Budget Thuis op.
 
-    The tariffs are priced for the customer's own contract (see pricing.py).
+    De tarieven worden geprijsd voor het eigen contract (zie pricing.py).
     """
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -155,12 +155,12 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
 
     @callback
     def async_start_price_clock(self) -> CALLBACK_TYPE:
-        """Re-evaluate entity states on every price boundary.
+        """Bepaal de entiteitstoestanden opnieuw op elke prijsgrens.
 
-        Returns the unsubscribe callback.
+        Geeft de callback terug om dit weer te stoppen.
 
-        See PRICE_TICK_MINUTES: the fetch itself stays on its own interval,
-        this only lets entities re-read the cached data at the right moment.
+        Zie PRICE_TICK_MINUTES: het ophalen houdt zijn eigen interval, dit laat
+        de entiteiten alleen op het juiste moment de opgeslagen gegevens lezen.
         """
         return async_track_time_change(
             self.hass, self._async_price_clock_tick, minute=PRICE_TICK_MINUTES, second=0
@@ -168,8 +168,9 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
 
     @callback
     def _async_price_clock_tick(self, _now: datetime) -> None:
-        if self.data is not None:
-            self.async_update_listeners()
+        # De klok start pas na de eerste geslaagde ophaalronde, dus er zijn
+        # altijd gegevens om opnieuw te lezen.
+        self.async_update_listeners()
 
     async def _async_update_data(self) -> BudgetThuisData:
         session = async_get_clientsession(self.hass)
@@ -177,8 +178,10 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             async with session.get(TARIFF_URL) as response:
                 response.raise_for_status()
                 html = await response.text()
-        except Exception as err:  # noqa: BLE001 - surfaced uniformly as UpdateFailed
-            raise UpdateFailed(f"Error fetching tariff page: {err}") from err
+        except Exception as err:  # noqa: BLE001 - elke fout wordt als UpdateFailed gemeld
+            raise UpdateFailed(
+                f"Fout bij het ophalen van de tarievenpagina: {err}"
+            ) from err
 
         try:
             electricity = parse_tariff_days(html, ELECTRICITY)

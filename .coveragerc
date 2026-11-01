@@ -1,0 +1,8 @@
+# Dekking van de integratie: alle regels én alle vertakkingen moeten geraakt zijn.
+[run]
+branch = True
+source = custom_components/budgetthuis
+
+[report]
+fail_under = 100
+show_missing = True

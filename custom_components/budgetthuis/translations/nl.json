@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Budget Thuis Dynamic Prices",
+        "description": "Voeg de sensoren met dynamische stroomprijzen van Budget Thuis toe. De integratie leest de openbare tarievenpagina en heeft geen account of API-sleutel nodig. Eén instantie per Home Assistant is genoeg."
+      }
+    },
+    "abort": {
+      "already_configured": "Budget Thuis Dynamic Prices is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Contractprijzen",
+        "description": "De inkoopvergoeding is de vergoeding van je eigen contract. Vul die in inclusief BTW, precies zoals de Budget Thuis-app hem onder je tarief toont. Er is een aparte voor stroom (per kWh) en gas (per m³). De energiebelasting vraagt de integratie niet: dat is een overheidstarief dat per uur op de tarievenpagina staat en automatisch wordt toegepast. De beursprijs (de actuele marktprijs) wordt ook automatisch opgehaald, vul die hieronder dus niet in. De beginwaarden zijn een startpunt en kloppen niet per se met jouw contract.",
+        "data": {
+          "inkoopvergoeding": "Inkoopvergoeding stroom (EUR/kWh, incl. BTW)",
+          "vat_percent": "BTW (%)",
+          "beursprijs_markup": "Extra correctie op de actuele beursprijs (EUR/kWh, laat op 0 staan tenzij je een reden hebt)",
+          "gas_inkoopvergoeding": "Inkoopvergoeding gas (EUR/m³, incl. BTW)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_price": {
+        "name": "Huidige prijs"
+      },
+      "next_hour_price": {
+        "name": "Prijs volgend uur"
+      },
+      "today_average_price": {
+        "name": "Gemiddelde prijs vandaag"
+      },
+      "lowest_price_today": {
+        "name": "Laagste prijs vandaag"
+      },
+      "highest_price_today": {
+        "name": "Hoogste prijs vandaag"
+      },
+      "cheapest_period_today": {
+        "name": "Goedkoopste periode vandaag"
+      },
+      "most_expensive_period_today": {
+        "name": "Duurste periode vandaag"
+      },
+      "current_gas_price": {
+        "name": "Huidige gasprijs"
+      }
+    },
+    "binary_sensor": {
+      "cheap_hour": {
+        "name": "Goedkoop uur"
+      }
+    }
+  }
+}

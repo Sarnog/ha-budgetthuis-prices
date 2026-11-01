@@ -1,4 +1,4 @@
-"""Constants for the Budget Thuis Dynamic Prices integration."""
+"""Constanten voor de integratie Budget Thuis Dynamic Prices."""
 
 from datetime import timedelta
 
@@ -10,48 +10,48 @@ TARIFF_URL = (
 
 NEXT_DATA_PATTERN = r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>'
 
-# Budget Thuis publishes tomorrow's tariffs in the afternoon, same as the
-# day-ahead auction they're derived from. Polling hourly is enough to pick
-# that up promptly without hammering the site.
+# Budget Thuis publiceert de tarieven van morgen in de middag, net als de
+# day-ahead-veiling waar ze van zijn afgeleid. Elk uur ophalen is genoeg om dat
+# snel op te pikken zonder de site te belasten.
 UPDATE_INTERVAL = timedelta(hours=1)
 
-# Entity states are re-evaluated on this wall-clock grid, independent of the
-# poll above: the poll's phase depends on when Home Assistant started (e.g.
-# 14:23, 15:23, ...), so relying on it alone left the previous hour's price
-# showing until the next poll. The page currently has hourly electricity and
-# 00:00/06:00 gas boundaries; ticking every quarter hour also covers a future
-# move to 15-minute electricity prices. Only the cached data is re-read, no
-# extra request is made.
+# De entiteitstoestanden worden op dit klokraster opnieuw bepaald, los van het
+# ophalen hierboven: het moment van ophalen hangt af van wanneer Home Assistant
+# startte (bijvoorbeeld 14:23, 15:23, ...), en daarop vertrouwen liet de prijs
+# van het vorige uur te lang staan. De pagina heeft nu uurprijzen voor stroom en
+# grenzen om 00:00/06:00 voor gas; elk kwartier controleren dekt ook een latere
+# overstap naar kwartierprijzen. Er wordt alleen in de opgeslagen gegevens
+# gelezen, er komt geen extra verzoek bij.
 PRICE_TICK_MINUTES = (0, 15, 30, 45)
 
-# Prices are kept at 5 decimals, the precision mijn.budgetthuis.nl shows them
-# with. Rounding each hour to 3 decimals made today's average drift by up to
-# EUR 0.001 from the figure Budget Thuis itself reports (0.433 vs 0.43353), and
-# flattened the gas price's two blocks (2.02694 / 2.02712) to the same 2.027.
-# The UI still shows 3 decimals via suggested_display_precision.
+# Prijzen worden op 5 decimalen bewaard, de precisie waarmee mijn.budgetthuis.nl
+# ze toont. Per uur afronden op 3 decimalen liet het daggemiddelde tot
+# EUR 0,001 afwijken van wat Budget Thuis zelf meldt (0,433 tegenover 0,43353)
+# en maakte van de twee gasblokken (2,02694 en 2,02712) allebei 2,027. De
+# weergave in Home Assistant blijft op 3 decimalen (suggested_display_precision).
 PRICE_DECIMALS = 5
 
 CURRENCY = "EUR"
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
 CURRENCY_EUR_PER_M3 = "EUR/m³"
 
-# Contract-pricing options (Home Assistant options flow), mirroring the
-# breakdown shown in the Budget Thuis app's own tariff screen: beursprijs
-# (live per-hour, already parsed) + energiebelasting with 21% BTW on top,
-# plus the inkoopvergoeding, which the app already shows including BTW.
-# energiebelasting is a government tax rate, not a Budget Thuis one, and its
-# net amount is already published per hour on the tariff page - so it's read
-# live (see pricing.py) rather than configured here. "Stroom gemiddeld" in the
-# app is just the resulting average all-in price, not a separate input.
+# Opties voor de contractprijs (opties-flow van Home Assistant), naar het
+# voorbeeld van het tarievenscherm in de Budget Thuis-app: beursprijs (live per
+# uur, al ingelezen) + energiebelasting met 21% BTW, plus de inkoopvergoeding,
+# die de app al inclusief BTW toont. De energiebelasting is een overheidstarief
+# en het netto bedrag staat per uur op de tarievenpagina, dus dat wordt live
+# gelezen (zie pricing.py) in plaats van ingesteld. "Stroom gemiddeld" in de app
+# is alleen de uitkomst, geen aparte invoer.
 CONF_INKOOPVERGOEDING = "inkoopvergoeding"
 CONF_VAT_PERCENT = "vat_percent"
 CONF_BEURSPRIJS_MARKUP = "beursprijs_markup"
-# Gas has its own inkoopvergoeding (EUR/m³, incl. BTW); BTW is shared with electricity.
+# Gas heeft een eigen inkoopvergoeding (EUR/m³, incl. BTW); de BTW is gelijk aan
+# die van stroom.
 CONF_GAS_INKOOPVERGOEDING = "gas_inkoopvergoeding"
 
-# Starting points only - match these to your own contract's tariff breakdown
-# in the Budget Thuis app, they're not guaranteed accurate for every contract.
-# Both inkoopvergoeding defaults are including BTW, as the app shows them.
+# Alleen beginwaarden: stem ze af op de tariefopbouw van het eigen contract in de
+# Budget Thuis-app. Beide inkoopvergoedingen zijn inclusief BTW, zoals de app ze
+# toont.
 DEFAULT_INKOOPVERGOEDING = 0.016822
 DEFAULT_VAT_PERCENT = 21.0
 DEFAULT_BEURSPRIJS_MARKUP = 0.0

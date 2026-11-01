@@ -1,139 +1,56 @@
 # Budget Thuis Dynamic Prices
 
-Home Assistant custom integration that exposes [Budget Thuis](https://www.budgetthuis.nl/)'s
-dynamic electricity and gas tariffs as sensors, so you can automate around cheap/expensive
-hours (battery charging, EV charging, appliance scheduling, etc.).
+Home Assistant-integratie met de dynamische stroom- en gasprijzen van [Budget Thuis](https://www.budgetthuis.nl/), voor automatiseringen rond goedkope en dure uren (batterij, auto laden, apparaten plannen).
 
-Reads the public tariff page
-[`/energie/klantenservice/actuele-dynamische-tarieven`](https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven)
-directly — no account, login, or API key needed. Rather than trust the site's own displayed
-all-in price (which reflects Budget Thuis's generic published figure, not necessarily your
-specific contract), the integration recomputes the price itself from the live per-hour
-beursprijs and energiebelasting (both published on the tariff page) plus BTW and your own
-contract's inkoopvergoeding — the exact breakdown shown on the tariff screen in the Budget
-Thuis app. Configure your inkoopvergoeding via Settings → Devices & Services → Budget Thuis
-Dynamic Prices → Configure.
+De integratie leest de openbare [tarievenpagina](https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven). Je hebt geen account of API-sleutel nodig. De prijs rekent ze zelf uit voor jouw contract: de actuele beursprijs en energiebelasting van de pagina, plus BTW en jouw eigen inkoopvergoeding. De prijs die de site zelf toont is niet bruikbaar, want daar zit jouw inkoopvergoeding niet in.
 
-## Entities
+## Installatie
 
-One device, eight sensors and a binary sensor:
+1. HACS → Integraties → ⋮ → Aangepaste repositories → voeg deze repository toe als categorie *Integratie*.
+2. Installeer *Budget Thuis Dynamic Prices* en herstart Home Assistant.
+3. Instellingen → Apparaten & diensten → Integratie toevoegen → *Budget Thuis*.
 
-- **Current price** (`sensor.current_price`) — this hour's customer-contract-accurate price
-  (EUR/kWh). Carries the full hourly breakdown as attributes: `raw_today`, `raw_tomorrow`
-  (each entry has both `price` — your contract price — and `site_price` — Budget Thuis's own
-  displayed figure, for comparison), `tomorrow_valid`, plus average/lowest/highest for both
-  days — enough to drive an apexcharts-card style hourly price graph. Each `raw_*` entry also
-  carries `value` (equal to `price`) and the sensor a `currency` attribute, the HACS Nord Pool
-  layout, so price-driven integrations such as
-  [Omnibattery](https://github.com/ffunes/Omnibattery) can use this sensor directly with their
-  "Nordpool" price source. Prices are kept at 5 decimals, the precision mijn.budgetthuis.nl
-  shows; the UI displays 3.
-- **Next hour price** (`sensor.next_hour_price`) — the upcoming hour's price, useful for
-  pre-emptive automations.
-- **Today average price** (`sensor.today_average_price`).
-- **Lowest price today** (`sensor.lowest_price_today`) / **Highest price today**
-  (`sensor.highest_price_today`) — the same figures already in `current_price`'s attributes,
-  exposed as their own entities so they're pickable in the UI automation editor (e.g. a
-  `numeric_state` trigger comparing `current_price` against `lowest_price_today`) without
-  needing a template.
-- **Cheapest period today** (`sensor.cheapest_period_today`) / **Most expensive period today**
-  (`sensor.most_expensive_period_today`) — state is a human-readable time range, e.g.
-  `15:00 - 19:00`: the consecutive run of below/above-average hours with the lowest/highest
-  average price that day, with `start`, `end` (ISO timestamps) and `average_price` as
-  attributes for automations. The run's length isn't configured — it's whatever shape that
-  day's prices actually produce, anywhere from a single hour to most of the day.
-- **Cheap hour** (`binary_sensor.cheap_hour`) — on whenever the current price is at or below
-  today's average. A no-configuration building block for "run this when it's cheap"
-  automations that doesn't require templating `raw_today` yourself.
-- **Current gas price** (`sensor.current_gas_price`) — the current customer-contract-accurate
-  gas price (EUR/m³). Gas is priced per gas day, which runs from 06:00 to 06:00, so this
-  changes once a day at 06:00. Carries `raw_today`, `raw_tomorrow` (the 00:00–06:00 and
-  06:00–24:00 blocks, each with `price` and `site_price`) and `tomorrow_valid` as attributes.
-  Stays unknown if your tariff page carries no gas prices; disable it if you don't have gas.
+## Instellen
 
-Tomorrow's prices are only published by Budget Thuis in the afternoon; until then
-`raw_tomorrow` is empty and `tomorrow_valid` is `false` — the period/lowest/highest sensors
-only ever look at today's data.
+Instellingen → Apparaten & diensten → Budget Thuis Dynamic Prices → Configureren.
 
-Entity states follow the clock, not the moment of the last fetch: every price sensor moves
-to the new price exactly on the hour (and the gas price at 06:00), and "today" becomes the
-next day at midnight — no matter when Home Assistant or the integration was started. The
-tariff page itself is fetched once an hour; the switch-over only re-reads that cached data.
-This also holds on the daylight saving time changeovers: in autumn the repeated 02:00–03:00
-hour gets its own price, in spring the missing hour is simply skipped.
-
-## Contract pricing
-
-Configurable via the integration's "Configure" option (Settings → Devices & Services):
-
-| Field | Meaning | Default |
+| Instelling | Betekenis | Beginwaarde |
 |---|---|---|
-| Inkoopvergoeding electricity | Purchasing fee (EUR/kWh), **including BTW**, as shown in the app | 0.016822 |
-| BTW | VAT (%) | 21 |
-| Beursprijs adjustment | Extra correction on top of the live beursprijs (EUR/kWh) — beursprijs itself is always fetched automatically, this is **not** where you enter it; leave at 0 unless you have a specific reason | 0 |
-| Inkoopvergoeding gas | Purchasing fee on gas (EUR/m³), **including BTW**, as shown in the app | 0.06413 |
+| Inkoopvergoeding stroom | EUR/kWh, **incl. BTW**, zoals de Budget Thuis-app hem toont | 0,016822 |
+| Inkoopvergoeding gas | EUR/m³, **incl. BTW** | 0,06413 |
+| BTW | percentage | 21 |
+| Extra correctie beursprijs | EUR/kWh, voor bijzondere gevallen | 0 |
 
-Price formula: `(beursprijs + beursprijs_adjustment + energiebelasting) × (1 + btw / 100) + inkoopvergoeding`.
+De beginwaarden kloppen niet per se met jouw contract. Neem de bedragen over uit de tariefopbouw in de Budget Thuis-app of op mijn.budgetthuis.nl. Na het opslaan wordt alles direct opnieuw berekend.
 
-The inkoopvergoeding is entered including BTW because that's how the Budget Thuis app shows
-it, so it's added after BTW rather than taxed a second time. Gas uses the same formula with
-its own beursprijs and energiebelasting per m³ (both read live from the tariff page), the gas
-inkoopvergoeding and the same BTW; the beursprijs adjustment only applies to electricity.
+Prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW) + inkoopvergoeding.
 
-Energiebelasting isn't a configurable field — it's a government-set tax rate (the same for
-every energy supplier), and its net amount is already published per hour on the tariff page,
-so it's read live rather than guessed. The inkoopvergoeding (one for electricity, one for gas)
-is the part that's genuinely specific to your contract; **the defaults are a starting point,
-not guaranteed to match your contract** — read the real values (including BTW) off your own
-tariff breakdown in the Budget Thuis app and enter those instead. Changing these options reloads the
-integration and recalculates immediately, no restart needed.
+## Entiteiten
 
-## Installation
+| Entiteit | Inhoud |
+|---|---|
+| Huidige prijs | Prijs van dit uur in EUR/kWh, met de uurprijzen van vandaag en morgen als attributen |
+| Prijs volgend uur | Prijs van het volgende uur |
+| Gemiddelde, laagste en hoogste prijs vandaag | Dagstatistieken |
+| Goedkoopste en duurste periode vandaag | Aaneengesloten reeks uren onder of boven het gemiddelde, bijvoorbeeld `15:00 - 19:00` |
+| Goedkoop uur | Aan zolang de prijs op of onder het daggemiddelde ligt |
+| Huidige gasprijs | EUR/m³, verandert eens per gasdag om 06:00 |
 
-### HACS (custom repository)
+De prijzen van morgen verschijnen zodra Budget Thuis ze publiceert, meestal in de middag. De prijzen schuiven op het hele uur door, ook rond de zomer- en wintertijd.
 
-1. HACS → Integrations → ⋮ → Custom repositories → add this repo URL, category "Integration".
-2. Install "Budget Thuis Dynamic Prices", restart Home Assistant.
-3. Settings → Devices & Services → Add Integration → search "Budget Thuis".
+## Gebruik met Omnibattery
 
-### Manual
+De uurprijzen staan in de indeling van Nord Pool: `raw_today` en `raw_tomorrow` met `start`, `end` en `value`, plus `currency`. Kies in [Omnibattery](https://github.com/ffunes/Omnibattery) als prijsbron *Nordpool* en selecteer de sensor *Huidige prijs*.
 
-Copy `custom_components/budgetthuis` into your Home Assistant `config/custom_components/`
-directory and restart.
-
-## Development
+## Ontwikkelen
 
 ```
 python3 -m venv .venv
-.venv/bin/pip install -r requirements_test.txt ruff==0.16.2
+.venv/bin/pip install -r requirements_test.txt
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
-.venv/bin/pytest tests/ -v
+.venv/bin/mypy custom_components
+.venv/bin/vulture custom_components vulture_whitelist.py
+.venv/bin/pytest tests --cov
 ```
 
-Lint and formatting settings live in `ruff.toml`; CI runs the same `ruff` checks.
-
-`parser.py` (page parsing), `pricing.py` (the contract price formula), and `stats.py` (today's
-average/lowest/highest and the cheapest/most-expensive period search) have no Home Assistant
-import, so they're covered by plain pytest (`tests/test_parser.py`, `tests/test_pricing.py`,
-`tests/test_stats.py`). `coordinator.py`, `config_flow.py`, `sensor.py`, `binary_sensor.py`,
-and `helpers.py` are thin Home Assistant glue around those.
-
-`tests/test_ha_timing.py` sets the integration up in a real Home Assistant test instance and
-checks that prices switch on the hour, at midnight and (for gas) at 06:00. It needs
-`pytest-homeassistant-custom-component` and is skipped automatically without it:
-
-```
-.venv/bin/pip install pytest-homeassistant-custom-component
-.venv/bin/pytest tests/ -v -o asyncio_mode=auto
-```
-
-## Before publishing
-
-- Push this to a real GitHub repo so HACS custom-repository installs and the CI workflows
-  in `.github/workflows/` have something to point at.
-
-## Why scrape the page instead of an API?
-
-Budget Thuis doesn't publish a documented public price API. This mirrors the same
-`__NEXT_DATA__` extraction already proven out in a companion project's battery-control
-Node.js code, which has been fetching this page in production.
+Dezelfde controles draaien in CI. De dekking moet 100% zijn, inclusief vertakkingen. De berekening (`parser.py`, `pricing.py`, `stats.py`) heeft geen Home Assistant nodig; `coordinator.py`, `config_flow.py`, `sensor.py` en `binary_sensor.py` zijn de aansluiting op Home Assistant en worden met een echte testinstantie getest.
