@@ -22,7 +22,12 @@ One device, eight sensors and a binary sensor:
   (EUR/kWh). Carries the full hourly breakdown as attributes: `raw_today`, `raw_tomorrow`
   (each entry has both `price` — your contract price — and `site_price` — Budget Thuis's own
   displayed figure, for comparison), `tomorrow_valid`, plus average/lowest/highest for both
-  days — enough to drive an apexcharts-card style hourly price graph.
+  days — enough to drive an apexcharts-card style hourly price graph. Each `raw_*` entry also
+  carries `value` (equal to `price`) and the sensor a `currency` attribute, the HACS Nord Pool
+  layout, so price-driven integrations such as
+  [Omnibattery](https://github.com/ffunes/Omnibattery) can use this sensor directly with their
+  "Nordpool" price source. Prices are kept at 5 decimals, the precision mijn.budgetthuis.nl
+  shows; the UI displays 3.
 - **Next hour price** (`sensor.next_hour_price`) — the upcoming hour's price, useful for
   pre-emptive automations.
 - **Today average price** (`sensor.today_average_price`).
