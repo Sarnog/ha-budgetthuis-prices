@@ -24,10 +24,6 @@ UPDATE_INTERVAL = timedelta(hours=1)
 # extra request is made.
 PRICE_TICK_MINUTES = (0, 15, 30, 45)
 
-ATTR_TODAY = "today"
-ATTR_TOMORROW = "tomorrow"
-ATTR_TOMORROW_VALID = "tomorrow_valid"
-
 # Prices are kept at 5 decimals, the precision mijn.budgetthuis.nl shows them
 # with. Rounding each hour to 3 decimals made today's average drift by up to
 # EUR 0.001 from the figure Budget Thuis itself reports (0.433 vs 0.43353), and
