@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3, DOMAIN
+from .const import CURRENCY, CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3, DOMAIN
 from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
 from .helpers import device_info as get_device_info
 from .stats import (
@@ -27,10 +27,18 @@ from .stats import (
 
 
 def _serialize(hours: list[PricedHour]) -> list[dict]:
+    """Hourly entries for the raw_today / raw_tomorrow attributes.
+
+    "value" duplicates "price" so the attributes follow the Nord Pool (HACS)
+    layout ({start, end, value}) that price-driven integrations such as
+    Omnibattery read directly; "price" and "site_price" stay for existing
+    templates and charts.
+    """
     return [
         {
             "start": h.start.isoformat(),
             "end": h.end.isoformat(),
+            "value": h.price,
             "price": h.price,
             "site_price": h.site_price,
         }
@@ -112,6 +120,8 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
             "raw_today": _serialize(data.today),
             "raw_tomorrow": _serialize(data.tomorrow),
             "tomorrow_valid": data.tomorrow_valid,
+            # Nord Pool-style consumers read the currency from here.
+            "currency": CURRENCY,
             "average_today": average(data.today),
             "lowest_today": lowest(data.today),
             "highest_today": highest(data.today),

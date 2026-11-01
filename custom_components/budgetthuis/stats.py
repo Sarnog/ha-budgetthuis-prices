@@ -12,6 +12,8 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from .const import PRICE_DECIMALS
+
 if TYPE_CHECKING:
     from .coordinator import PricedHour
 
@@ -39,7 +41,7 @@ def average(hours: list[PricedHour]) -> float | None:
     prices = priced(hours)
     if not prices:
         return None
-    return round(sum(prices) / len(prices), 3)
+    return round(sum(prices) / len(prices), PRICE_DECIMALS)
 
 
 def lowest(hours: list[PricedHour]) -> float | None:
@@ -69,7 +71,7 @@ def _runs(
 
 
 def _period(run: list[PricedHour]) -> tuple[datetime, datetime, float]:
-    run_average = round(sum(h.price for h in run) / len(run), 3)
+    run_average = round(sum(h.price for h in run) / len(run), PRICE_DECIMALS)
     return run[0].start, run[-1].end, run_average
 
 

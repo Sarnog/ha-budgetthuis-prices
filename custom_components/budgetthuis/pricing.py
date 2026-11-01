@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .const import PRICE_DECIMALS
 from .parser import HourPrice
 
 
@@ -42,4 +43,7 @@ def calculate_price(hour: HourPrice, config: ContractConfig) -> float | None:
         return None
 
     subtotal = hour.commodity_net + config.beursprijs_markup + hour.energy_tax_net
-    return round(subtotal * (1 + config.vat_percent / 100) + config.inkoopvergoeding, 3)
+    return round(
+        subtotal * (1 + config.vat_percent / 100) + config.inkoopvergoeding,
+        PRICE_DECIMALS,
+    )

@@ -129,6 +129,22 @@ async def test_current_price_switches_on_the_hour_not_on_the_poll(
     ) == pytest.approx(_commodity(DAY_1, 16) + ENERGY_TAX)
 
 
+async def test_raw_prices_follow_the_nord_pool_layout(hass, setup_integration) -> None:
+    """Omnibattery's Nord Pool parser reads {start, end, value} + currency."""
+    await setup_integration(_local(DAY_1, 14, 23))
+    attributes = hass.states.get(
+        "sensor.budget_thuis_dynamic_prices_current_price"
+    ).attributes
+
+    assert attributes["currency"] == "EUR"
+    for key in ("raw_today", "raw_tomorrow"):
+        entries = attributes[key]
+        assert len(entries) == 24
+        for entry in entries:
+            assert {"start", "end", "value", "price", "site_price"} <= entry.keys()
+            assert entry["value"] == entry["price"]
+
+
 async def test_current_price_rolls_over_at_midnight(
     hass, setup_integration, freezer
 ) -> None:
