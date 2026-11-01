@@ -1,8 +1,4 @@
-"""Unit tests for the pure Budget Thuis tariff page parser.
-
-Deliberately imports only custom_components.budgetthuis.parser (no Home
-Assistant dependency), so these run with plain pytest.
-"""
+"""Unittests voor het inlezen van de tarievenpagina van Budget Thuis."""
 
 import json
 from datetime import UTC, datetime, timedelta
@@ -39,8 +35,8 @@ def test_parses_hourly_prices_per_day(tariff_html: str) -> None:
 
 def test_skips_hours_with_no_total_tariff(tariff_html: str) -> None:
     by_date = parse_tariff_days(tariff_html)
-    # The fixture's 02:00-03:00 entry has no TotalTariff and must be dropped,
-    # not crash the parse or show up as a bogus zero price.
+    # De regel 02:00-03:00 in de fixture heeft geen TotalTariff en moet vervallen,
+    # niet de uitlezing laten crashen of als valse nulprijs verschijnen.
     today = by_date["2026-07-29"]
     assert len(today) == 2
     assert all(h.start.hour != 2 for h in today)
@@ -52,13 +48,13 @@ def test_skips_days_with_no_tariffs(tariff_html: str) -> None:
 
 
 def test_missing_next_data_raises() -> None:
-    with pytest.raises(TariffParseError, match="No __NEXT_DATA__"):
+    with pytest.raises(TariffParseError, match="Geen __NEXT_DATA__"):
         parse_tariff_days("<html><body>no data here</body></html>")
 
 
 def test_malformed_json_raises() -> None:
     html = '<script id="__NEXT_DATA__" type="application/json">{not valid json</script>'
-    with pytest.raises(TariffParseError, match="Malformed __NEXT_DATA__"):
+    with pytest.raises(TariffParseError, match="Ongeldige __NEXT_DATA__"):
         parse_tariff_days(html)
 
 
@@ -67,17 +63,17 @@ def test_missing_tariff_days_raises() -> None:
         '<script id="__NEXT_DATA__" type="application/json">'
         '{"props": {"pageProps": {}}}</script>'
     )
-    with pytest.raises(TariffParseError, match="No tariffDays"):
+    with pytest.raises(TariffParseError, match="Geen tariffDays"):
         parse_tariff_days(html)
 
 
 def test_parses_gas_blocks_per_day(tariff_html: str) -> None:
     by_date = parse_tariff_days(tariff_html, GAS)
 
-    # Only 2026-07-29 carries gas in the fixture; days without it are left out.
+    # Alleen 2026-07-29 heeft gas in de fixture; dagen zonder gas blijven weg.
     assert set(by_date) == {"2026-07-29"}
     blocks = by_date["2026-07-29"]
-    # Sorted by start, whatever order the page lists them in.
+    # Gesorteerd op begin, in welke volgorde de pagina ze ook toont.
     assert [b.start.hour for b in blocks] == [0, 6]
     assert blocks[0].end.isoformat() == "2026-07-29T06:00:00+02:00"
     assert blocks[1].end.isoformat() == "2026-07-30T00:00:00+02:00"
@@ -99,10 +95,10 @@ def test_page_without_gas_yields_no_gas_days() -> None:
     assert parse_tariff_days(html, GAS) == {}
 
 
-# --- Daylight saving time ---------------------------------------------------
-# The page uses naive Amsterdam wall-clock timestamps. On 2026-10-25 the
-# clock goes back (02:00-03:00 happens twice, 25 hours); on 2027-03-28 it
-# jumps forward (02:00-03:00 doesn't exist, 23 hours).
+# --- Zomertijd ---------------------------------------------------
+# De pagina gebruikt naïeve Amsterdamse klokkijden. Op 2026-10-25 gaat de klok
+# terug (02:00-03:00 komt twee keer voor, 25 uur); op 2027-03-28 gaat hij vooruit
+# (02:00-03:00 bestaat niet, 23 uur).
 
 
 def _dst_page(
@@ -148,7 +144,7 @@ def _assert_contiguous_utc_hours(blocks, first_utc: str) -> None:
 
 @pytest.mark.parametrize("first_repeat_end", [3, 2])
 def test_autumn_changeover_keeps_both_0200_hours(first_repeat_end: int) -> None:
-    """Both spellings of the first 02:00 block's end ("03:00" or "02:00")."""
+    """Beide schrijfwijzen van het einde van het eerste 02:00-blok."""
     blocks = parse_tariff_days(_dst_page(_autumn_entries(first_repeat_end)))[
         "2026-10-25"
     ]
@@ -182,7 +178,7 @@ def test_spring_changeover_has_23_contiguous_hours() -> None:
 
 
 def test_timestamps_with_an_offset_are_respected() -> None:
-    """The app API sends offsets; if the page ever does too, keep them."""
+    """De app-API stuurt UTC-verschillen mee; behoud ze als de pagina dat ook doet."""
     entries = [
         ("2026-10-25T02:00:00+02:00", "2026-10-25T02:00:00+01:00", 2.0),
         ("2026-10-25T02:00:00+01:00", "2026-10-25T03:00:00+01:00", 3.0),
@@ -202,3 +198,24 @@ def test_autumn_gas_block_spans_seven_real_hours() -> None:
     assert (blocks[0].end - blocks[0].start) == timedelta(hours=6)  # wall clock
     assert blocks[0].end.timestamp() - blocks[0].start.timestamp() == 7 * 3600
     assert blocks[0].end.timestamp() == blocks[1].start.timestamp()
+
+
+def test_skips_blocks_without_start_or_end() -> None:
+    """Een blok zonder begin of einde is onbruikbaar en wordt overgeslagen."""
+    tariffs = [
+        {"End": "2026-07-29 01:00:00", "TotalTariff": {"AmountGross": 0.2}},
+        {"Start": "2026-07-29 01:00:00", "TotalTariff": {"AmountGross": 0.2}},
+        {
+            "Start": "2026-07-29 02:00:00",
+            "End": "2026-07-29 03:00:00",
+            "TotalTariff": {"AmountGross": 0.3},
+        },
+    ]
+    payload = json.dumps(
+        {"props": {"pageProps": {"tariffDays": [{"ElectricityTariffs": tariffs}]}}}
+    )
+    html = f'<script id="__NEXT_DATA__" type="application/json">{payload}</script>'
+
+    by_date = parse_tariff_days(html)
+
+    assert [h.price for h in by_date["2026-07-29"]] == [0.3]

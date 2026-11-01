@@ -1,7 +1,7 @@
-"""Pure parsing logic for the Budget Thuis tariff page.
+"""Inleeslogica voor de tarievenpagina van Budget Thuis.
 
-Deliberately free of any Home Assistant import so it can be unit tested with
-plain pytest, independent of whatever HA dev environment is available.
+Bewust zonder Home Assistant-imports, zodat het met gewone pytest te testen is,
+los van welke HA-ontwikkelomgeving er beschikbaar is.
 """
 
 from __future__ import annotations
@@ -17,20 +17,20 @@ from .const import NEXT_DATA_PATTERN
 
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 
-# Keys of the per-day tariff lists in the page payload. Electricity comes in
-# hourly blocks; gas in two blocks per calendar day (00:00-06:00, still the
-# previous gas day's price, and 06:00-24:00), since a gas day starts at 06:00.
+# Sleutels van de tariefenlijsten per dag in de payload van de pagina. Stroom
+# komt in uurblokken; gas in twee blokken per kalenderdag (00:00-06:00, nog de
+# prijs van de vorige gasdag, en 06:00-24:00), omdat een gasdag om 06:00 begint.
 ELECTRICITY = "ElectricityTariffs"
 GAS = "GasTariffs"
 
 
 class TariffParseError(Exception):
-    """Raised when the tariff page can't be parsed into hourly prices."""
+    """De tarievenpagina is niet in te lezen als uurprijzen."""
 
 
 @dataclass
 class HourPrice:
-    """A single tariff block: one hour for electricity, a part of the day for gas."""
+    """Eén tariefblok: een uur bij stroom, een deel van de dag bij gas."""
 
     start: datetime
     end: datetime
@@ -39,29 +39,29 @@ class HourPrice:
     energy_tax_net: float | None
 
 
-# Daylight saving time: the page's timestamps are naive Amsterdam wall-clock
-# times. On the autumn changeover 02:00-03:00 happens twice, on the spring one
-# it doesn't happen at all, so a naive timestamp alone can't always tell which
-# real moment is meant. The helpers below resolve that, and all comparisons
-# elsewhere use absolute instants (see stats.hour_for).
+# Zomertijd: de tijdstempels op de pagina zijn naïeve klokkijden in Amsterdam.
+# Bij de overgang in de herfst komt 02:00-03:00 twee keer voor, bij die in het
+# voorjaar helemaal niet, dus een naïeve tijdstempel zegt niet altijd welk echt
+# moment bedoeld is. De hulpfuncties hieronder lossen dat op, en alle
+# vergelijkingen elders gebruiken absolute tijdstippen (zie stats.hour_for).
 
 
 def _localize(naive: datetime, fold: int) -> datetime:
-    """Attach Amsterdam time and normalise via UTC.
+    """Koppel Amsterdamse tijd en normaliseer via UTC.
 
-    The round trip gives the repeated autumn hour its proper fold, and moves a
-    spring-forward time that doesn't exist (02:xx) onto the real instant.
+    De omweg geeft het herhaalde uur in de herfst zijn juiste fold, en schuift
+    een niet bestaande tijd bij het voorjaar (02:xx) naar het echte tijdstip.
     """
     aware = naive.replace(tzinfo=AMSTERDAM, fold=fold)
     return aware.astimezone(UTC).astimezone(AMSTERDAM)
 
 
 def _parse_start(value: str, seen: set[datetime]) -> datetime:
-    """Parse a block start; a naive wall-clock time seen before is the repeat.
+    """Lees het begin van een blok; een eerder geziene naïeve klokkijd is de herhaling.
 
-    Blocks are listed in order, so the second "02:00" on the autumn changeover
-    day is the winter time hour (fold=1). Timestamps that carry their own UTC
-    offset are taken as-is.
+    De blokken staan op volgorde, dus de tweede "02:00" op de overgangsdag in de
+    herfst is het uur in wintertijd (fold=1). Tijdstempels met een eigen
+    UTC-verschil worden ongewijzigd overgenomen.
     """
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is not None:
@@ -72,7 +72,7 @@ def _parse_start(value: str, seen: set[datetime]) -> datetime:
 
 
 def _parse_end(value: str, start: datetime) -> datetime:
-    """Parse a block end, taking the repeated hour's later instant if needed."""
+    """Lees het einde van een blok; kies zo nodig het latere herhaalde uur."""
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is not None:
         return parsed.astimezone(AMSTERDAM)
@@ -83,10 +83,10 @@ def _parse_end(value: str, start: datetime) -> datetime:
 
 
 def _clip_overlaps(blocks: list[HourPrice]) -> None:
-    """End each block no later than the next one starts.
+    """Laat elk blok uiterlijk eindigen waar het volgende begint.
 
-    A naive end can't distinguish the two 02:00-03:00 hours either, so the
-    first of them would otherwise run on into the second.
+    Een naïef einde kan de twee uren 02:00-03:00 ook niet onderscheiden, dus
+    het eerste zou anders doorlopen in het tweede.
     """
     for block, following in pairwise(blocks):
         if block.end.timestamp() > following.start.timestamp():
@@ -96,26 +96,28 @@ def _clip_overlaps(blocks: list[HourPrice]) -> None:
 def parse_tariff_days(
     html: str, tariff_key: str = ELECTRICITY
 ) -> dict[str, list[HourPrice]]:
-    """Parse the __NEXT_DATA__ payload embedded in the tariff page into per-day prices.
+    """Lees de __NEXT_DATA__-payload van de tarievenpagina in als prijzen per dag.
 
-    tariff_key selects the commodity (ELECTRICITY or GAS). A page without any
-    entries for that commodity yields an empty dict, not an error.
+    tariff_key kiest de commodity (ELECTRICITY of GAS). Een pagina zonder
+    regels voor die commodity geeft een lege dict, geen fout.
 
-    Mirrors the extraction already proven in the arandu project's
-    node/src/providers/price-provider.js `fetchBudgetThuis`.
+    Volgt de uitlezing die al bewezen is in `fetchBudgetThuis` in
+    node/src/providers/price-provider.js van het arandu-project.
     """
     match = re.search(NEXT_DATA_PATTERN, html, re.DOTALL)
     if not match:
-        raise TariffParseError("No __NEXT_DATA__ payload found on tariff page")
+        raise TariffParseError(
+            "Geen __NEXT_DATA__-payload gevonden op de tarievenpagina"
+        )
 
     try:
         payload = json.loads(match.group(1))
     except json.JSONDecodeError as err:
-        raise TariffParseError(f"Malformed __NEXT_DATA__ JSON: {err}") from err
+        raise TariffParseError(f"Ongeldige __NEXT_DATA__-JSON: {err}") from err
 
     tariff_days = (payload.get("props") or {}).get("pageProps", {}).get("tariffDays")
     if not isinstance(tariff_days, list):
-        raise TariffParseError("No tariffDays in tariff page payload")
+        raise TariffParseError("Geen tariffDays in de payload van de tarievenpagina")
 
     by_date: dict[str, list[HourPrice]] = {}
     for day in tariff_days:
@@ -130,8 +132,8 @@ def parse_tariff_days(
             end_raw = tariff.get("End")
             if start_raw is None or end_raw is None:
                 continue
-            # Before the price check, so a skipped first 02:00 block still
-            # marks the next 02:00 as the repeated hour.
+            # Vóór de prijscontrole, zodat een overgeslagen eerste 02:00-blok de
+            # volgende 02:00 toch als herhaald uur markeert.
             start = _parse_start(start_raw, seen)
             total = tariff.get("TotalTariff") or {}
             price = total.get("AmountGross")

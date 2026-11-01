@@ -1,7 +1,4 @@
-"""Unit tests for the pure hourly-price statistics helpers.
-
-No Home Assistant dependency, same as test_parser.py/test_pricing.py.
-"""
+"""Unittests voor de statistiekfuncties over uurprijzen."""
 
 from __future__ import annotations
 
@@ -20,7 +17,7 @@ from custom_components.budgetthuis.stats import (
 
 @dataclass
 class _Hour:
-    """Stands in for coordinator.PricedHour - stats.py only needs start/end/price."""
+    """Vervangt coordinator.PricedHour: alleen start, end en price zijn nodig."""
 
     start: datetime
     end: datetime
@@ -68,8 +65,8 @@ def test_average_lowest_highest_of_empty_or_all_missing() -> None:
 
 
 def test_cheapest_period_picks_the_lowest_average_run() -> None:
-    # average = 0.2; two below-average runs: [0.1] and [0.05, 0.1] - the
-    # second has the lower average.
+    # gemiddelde = 0,2; twee reeksen onder het gemiddelde: [0,1] en [0,05, 0,1];
+    # de tweede heeft het laagste gemiddelde.
     hours = _hours(0.1, 0.3, 0.05, 0.1, 0.4)
 
     start, end, run_average = cheapest_period(hours)
@@ -80,8 +77,8 @@ def test_cheapest_period_picks_the_lowest_average_run() -> None:
 
 
 def test_most_expensive_period_picks_the_highest_average_run() -> None:
-    # average = 0.2; two above-average runs: [0.3] and [0.5, 0.4] - the
-    # second has the higher average.
+    # gemiddelde = 0,2; twee reeksen boven het gemiddelde: [0,3] en [0,5, 0,4];
+    # de tweede heeft het hoogste gemiddelde.
     hours = _hours(0.3, 0.1, 0.05, 0.5, 0.4)
 
     start, end, run_average = most_expensive_period(hours)
@@ -97,12 +94,12 @@ def test_periods_are_none_without_data() -> None:
 
 
 def test_most_expensive_period_none_when_every_hour_is_identical() -> None:
-    # Every hour equals the average, so there's no above-average run.
+    # Elk uur is gelijk aan het gemiddelde, dus er is geen reeks erboven.
     hours = _hours(0.2, 0.2, 0.2)
 
     assert most_expensive_period(hours) is None
-    # But the whole day is a (tied) below-average run, so cheapest_period
-    # still finds it.
+    # Maar de hele dag is (gelijk) een reeks onder het gemiddelde, dus
+    # cheapest_period vindt die wel.
     start, end, run_average = cheapest_period(hours)
     assert start == hours[0].start
     assert end == hours[-1].end
@@ -110,7 +107,7 @@ def test_most_expensive_period_none_when_every_hour_is_identical() -> None:
 
 
 def test_periods_skip_hours_with_missing_price() -> None:
-    # None breaks runs, same as an hour that's plainly not part of any block.
+    # None onderbreekt reeksen, net als een uur dat duidelijk buiten elk blok valt.
     hours = _hours(0.05, None, 0.4)
 
     start, end, run_average = cheapest_period(hours)
@@ -118,7 +115,7 @@ def test_periods_skip_hours_with_missing_price() -> None:
 
 
 def test_hour_for_tells_the_repeated_autumn_hour_apart() -> None:
-    """Same tzinfo + same wall-clock time must still match by real instant."""
+    """Dezelfde tzinfo en klokkijd moeten toch op het echte tijdstip matchen."""
     from zoneinfo import ZoneInfo
 
     ams = ZoneInfo("Europe/Amsterdam")

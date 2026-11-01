@@ -1,6 +1,6 @@
-# Lint + format settings, so `ruff check` / `ruff format` give the same result
-# locally and in CI.
-target-version = "py312"
+# Lint- en formatinstellingen, zodat `ruff check` en `ruff format` lokaal en in
+# CI hetzelfde resultaat geven.
+target-version = "py313"
 line-length = 88
 
 [lint]

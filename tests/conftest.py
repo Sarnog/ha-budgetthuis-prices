@@ -1,35 +1,30 @@
-"""Test bootstrap.
+"""Gedeelde testopzet: de integratie opzetten tegen een nagebootste tarievenpagina."""
 
-Registers `custom_components` / `custom_components.budgetthuis` as bare
-namespace packages pointing at the real source directories, without ever
-executing `custom_components/budgetthuis/__init__.py` (which imports
-Home Assistant and isn't needed to test the pure parser module). This lets
-`tests/test_parser.py` run with plain pytest, no Home Assistant install
-required.
+from __future__ import annotations
 
-When Home Assistant *is* installed (with pytest-homeassistant-custom-component,
-for `tests/test_ha_timing.py`), the real package is left importable instead,
-so Home Assistant can load the integration's `__init__.py` normally.
-"""
+from datetime import datetime
 
-import importlib.util
-import sys
-import types
-from pathlib import Path
+import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-REPO_ROOT = Path(__file__).parent.parent
+from custom_components.budgetthuis.const import DOMAIN, TARIFF_URL
+from tests.ha_helpers import DAY_1, DAY_2, NO_SURCHARGES, page
 
 
-def _register_namespace_package(name: str, path: Path) -> None:
-    if name in sys.modules:
-        return
-    module = types.ModuleType(name)
-    module.__path__ = [str(path)]
-    sys.modules[name] = module
+@pytest.fixture
+async def setup_integration(hass, enable_custom_integrations, aioclient_mock, freezer):
+    """Zet de integratie op een gegeven moment op, tegen de nagebootste pagina."""
 
+    async def _setup(start: datetime) -> MockConfigEntry:
+        await hass.config.async_set_time_zone("Europe/Amsterdam")
+        freezer.move_to(start)
+        aioclient_mock.get(TARIFF_URL, text=page([DAY_1, DAY_2]))
+        entry = MockConfigEntry(
+            domain=DOMAIN, data={}, options=NO_SURCHARGES, unique_id=DOMAIN
+        )
+        entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        return entry
 
-_register_namespace_package("custom_components", REPO_ROOT / "custom_components")
-if importlib.util.find_spec("homeassistant") is None:
-    _register_namespace_package(
-        "custom_components.budgetthuis", REPO_ROOT / "custom_components" / "budgetthuis"
-    )
+    return _setup
