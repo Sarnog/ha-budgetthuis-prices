@@ -4,6 +4,7 @@
 
 ### Toegevoegd
 - Sensor *Huidige terugleverprijs* (`current_export_price`) met `raw_today`, `raw_tomorrow` en `currency` in de indeling van Nord Pool, zodat Omnibattery hem als terugleverprijs kan lezen. Tot en met 2026 is de waarde de contractprijs (saldering), vanaf 2027 de beursprijs plus de ZonneBonus van Budget Thuis.
+- Opties voor de ZonneBonus: het percentage (standaard 30, 0 = uit) en de maximale beursprijs waarover de bonus telt (standaard EUR 0,20).
 
 ## 0.2.0
 

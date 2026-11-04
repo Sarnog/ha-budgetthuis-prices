@@ -14,12 +14,14 @@
     "step": {
       "init": {
         "title": "Contract pricing",
-        "description": "Inkoopvergoeding is your contract's own purchasing fee - enter it including BTW, exactly as the Budget Thuis app shows it under your tariff; there's a separate one for electricity (per kWh) and gas (per m³). Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. Beursprijs (the live market price) is also fetched automatically - do not enter it below. The defaults are a starting point, not guaranteed to match your contract.",
+        "description": "Inkoopvergoeding is your contract's own purchasing fee - enter it including BTW, exactly as the Budget Thuis app shows it under your tariff; there's a separate one for electricity (per kWh) and gas (per m³). Energiebelasting isn't asked here: it's a government tax rate, already published per hour on the tariff page, so it's applied automatically. Beursprijs (the live market price) is also fetched automatically - do not enter it below. The defaults are a starting point, not guaranteed to match your contract. The ZonneBonus applies to the export price from 2027; set the percentage to 0 if Budget Thuis ends the promotion.",
         "data": {
           "inkoopvergoeding": "Inkoopvergoeding electricity (EUR/kWh, incl. BTW)",
           "vat_percent": "BTW (%)",
           "beursprijs_markup": "Extra correction on top of the live beursprijs (EUR/kWh, leave at 0 unless you have a specific reason)",
-          "gas_inkoopvergoeding": "Inkoopvergoeding gas (EUR/m³, incl. BTW)"
+          "gas_inkoopvergoeding": "Inkoopvergoeding gas (EUR/m³, incl. BTW)",
+          "zonnebonus_percent": "ZonneBonus on exported energy from 2027 (%, 0 = off)",
+          "zonnebonus_max_beursprijs": "ZonneBonus: maximum market price the bonus applies to (EUR/kWh)"
         }
       }
     }

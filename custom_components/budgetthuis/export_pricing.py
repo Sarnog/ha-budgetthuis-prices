@@ -21,12 +21,7 @@ from functools import lru_cache
 from astral import Observer
 from astral.sun import sun
 
-from .const import (
-    PRICE_DECIMALS,
-    SALDERING_END_YEAR,
-    ZONNEBONUS_FACTOR,
-    ZONNEBONUS_MAX_BEURSPRIJS,
-)
+from .const import PRICE_DECIMALS, SALDERING_END_YEAR
 from .parser import AMSTERDAM, HourPrice
 
 
@@ -36,6 +31,18 @@ class Location:
 
     latitude: float
     longitude: float
+
+
+@dataclass(frozen=True)
+class ExportConfig:
+    """De instellingen van de ZonneBonus, voor de locatie van Home Assistant.
+
+    bonus_percent 0 zet de bonus uit; de terugleverprijs is dan de beursprijs.
+    """
+
+    location: Location
+    bonus_percent: float
+    bonus_max_beursprijs: float
 
 
 def _round_to_hour(moment: datetime) -> time:
@@ -71,7 +78,7 @@ def _in_bonus_window(hour: HourPrice, location: Location) -> bool:
 
 
 def calculate_export_price(
-    hour: HourPrice, contract_price: float | None, location: Location
+    hour: HourPrice, contract_price: float | None, config: ExportConfig
 ) -> float | None:
     """De opbrengst van één teruggeleverde kWh in dit uur.
 
@@ -87,6 +94,8 @@ def calculate_export_price(
         return None
 
     bonus = 0.0
-    if beursprijs > 0 and _in_bonus_window(hour, location):
-        bonus = ZONNEBONUS_FACTOR * min(beursprijs, ZONNEBONUS_MAX_BEURSPRIJS)
+    if beursprijs > 0 and _in_bonus_window(hour, config.location):
+        bonus = (
+            config.bonus_percent / 100 * min(beursprijs, config.bonus_max_beursprijs)
+        )
     return round(beursprijs + bonus, PRICE_DECIMALS)

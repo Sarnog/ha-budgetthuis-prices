@@ -14,10 +14,14 @@ from .const import (
     CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
+    CONF_ZONNEBONUS_MAX_BEURSPRIJS,
+    CONF_ZONNEBONUS_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
     DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
+    DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
+    DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
 )
 
@@ -89,6 +93,19 @@ class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
                         CONF_GAS_INKOOPVERGOEDING, DEFAULT_GAS_INKOOPVERGOEDING
                     ),
                 ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_ZONNEBONUS_PERCENT,
+                    default=options.get(
+                        CONF_ZONNEBONUS_PERCENT, DEFAULT_ZONNEBONUS_PERCENT
+                    ),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0)),
+                vol.Optional(
+                    CONF_ZONNEBONUS_MAX_BEURSPRIJS,
+                    default=options.get(
+                        CONF_ZONNEBONUS_MAX_BEURSPRIJS,
+                        DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
+                    ),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0)),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

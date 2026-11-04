@@ -18,16 +18,20 @@ from .const import (
     CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
+    CONF_ZONNEBONUS_MAX_BEURSPRIJS,
+    CONF_ZONNEBONUS_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
     DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
+    DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
+    DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
     PRICE_TICK_MINUTES,
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
-from .export_pricing import Location, calculate_export_price
+from .export_pricing import ExportConfig, Location, calculate_export_price
 from .parser import (
     AMSTERDAM,
     ELECTRICITY,
@@ -122,10 +126,22 @@ def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
     )
 
 
+def _export_config(hass: HomeAssistant, entry: ConfigEntry) -> ExportConfig:
+    """De ZonneBonus-opties, op de locatie van Home Assistant."""
+    options = entry.options
+    return ExportConfig(
+        location=Location(hass.config.latitude, hass.config.longitude),
+        bonus_percent=options.get(CONF_ZONNEBONUS_PERCENT, DEFAULT_ZONNEBONUS_PERCENT),
+        bonus_max_beursprijs=options.get(
+            CONF_ZONNEBONUS_MAX_BEURSPRIJS, DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS
+        ),
+    )
+
+
 def _price_hours(
-    hours: list[HourPrice], config: ContractConfig, location: Location | None
+    hours: list[HourPrice], config: ContractConfig, export: ExportConfig | None
 ) -> list[PricedHour]:
-    """Prijs de blokken; met een locatie ook de terugleverprijs (alleen stroom)."""
+    """Prijs de blokken; met export-instellingen ook de terugleverprijs (stroom)."""
     priced_hours = []
     for hour in hours:
         price = calculate_price(hour, config)
@@ -137,8 +153,8 @@ def _price_hours(
                 site_price=hour.price,
                 export_price=(
                     None
-                    if location is None
-                    else calculate_export_price(hour, price, location)
+                    if export is None
+                    else calculate_export_price(hour, price, export)
                 ),
             )
         )
@@ -148,11 +164,9 @@ def _price_hours(
 def _price_days(
     by_date: dict[str, list[HourPrice]],
     config: ContractConfig,
-    location: Location | None = None,
+    export: ExportConfig | None = None,
 ) -> dict[str, list[PricedHour]]:
-    return {
-        day: _price_hours(hours, config, location) for day, hours in by_date.items()
-    }
+    return {day: _price_hours(hours, config, export) for day, hours in by_date.items()}
 
 
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
@@ -211,7 +225,7 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             electricity=_price_days(
                 electricity,
                 _contract_config(self.entry),
-                Location(self.hass.config.latitude, self.hass.config.longitude),
+                _export_config(self.hass, self.entry),
             ),
             gas=_price_days(gas, _gas_contract_config(self.entry)),
         )
