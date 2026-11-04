@@ -22,6 +22,7 @@ Instellingen → Apparaten & diensten → Budget Thuis Dynamic Prices → Config
 | Extra correctie beursprijs | EUR/kWh, voor bijzondere gevallen | 0 |
 | ZonneBonus | %, vanaf 2027 op de terugleverprijs; 0 = uit | 30 |
 | ZonneBonus: maximale beursprijs | EUR/kWh | 0,20 |
+| ZonneBonus vanaf / tot en met | datums; leeg einde = geen einde | 1-1-2027 / leeg |
 
 De beginwaarden kloppen niet per se met jouw contract. Neem de bedragen over uit de tariefopbouw in de Budget Thuis-app of op mijn.budgetthuis.nl. Na het opslaan wordt alles direct opnieuw berekend.
 
@@ -39,7 +40,7 @@ Prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW) + inkoopvergoed
 | Huidige gasprijs | EUR/m³, verandert eens per gasdag om 06:00 |
 | Huidige terugleverprijs | Opbrengst van een teruggeleverde kWh, met de uurwaarden van vandaag en morgen als attributen |
 
-De terugleverprijs is tot en met 2026 gelijk aan de contractprijs (saldering). Vanaf 2027 is het de beursprijs plus de [ZonneBonus](https://www.budgetthuis.nl/pers/zonnebonus): standaard 30% extra over een beursprijs tot EUR 0,20 (beide instelbaar), tussen zonsopkomst en zonsondergang, niet bij een beursprijs van nul of lager. Het tijdvak wordt per maand benaderd uit de zonsopkomst en -ondergang op de locatie van Home Assistant. De grens van 5.000 kWh per jaar wordt niet bijgehouden.
+De terugleverprijs is tot en met 2026 gelijk aan de contractprijs (saldering). Vanaf 2027 is het de beursprijs plus de [ZonneBonus](https://www.budgetthuis.nl/pers/zonnebonus): standaard 30% extra over een beursprijs tot EUR 0,20 (instelbaar, net als de periode), tussen zonsopkomst en zonsondergang, niet bij een beursprijs van nul of lager. Het tijdvak wordt per maand benaderd uit de zonsopkomst en -ondergang op de locatie van Home Assistant. De grens van 5.000 kWh per jaar wordt niet bijgehouden.
 
 De prijzen van morgen verschijnen zodra Budget Thuis ze publiceert, meestal in de middag. De prijzen schuiven op het hele uur door, ook rond de zomer- en wintertijd.
 

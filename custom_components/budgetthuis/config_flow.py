@@ -8,18 +8,22 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
+from homeassistant.helpers.selector import DateSelector
 
 from .const import (
     CONF_BEURSPRIJS_MARKUP,
     CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
+    CONF_ZONNEBONUS_FROM,
     CONF_ZONNEBONUS_MAX_BEURSPRIJS,
     CONF_ZONNEBONUS_PERCENT,
+    CONF_ZONNEBONUS_UNTIL,
     DEFAULT_BEURSPRIJS_MARKUP,
     DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
+    DEFAULT_ZONNEBONUS_FROM,
     DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
     DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
@@ -106,6 +110,16 @@ class BudgetThuisOptionsFlow(config_entries.OptionsFlow):
                         DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
                     ),
                 ): vol.All(vol.Coerce(float), vol.Range(min=0)),
+                vol.Optional(
+                    CONF_ZONNEBONUS_FROM,
+                    default=options.get(CONF_ZONNEBONUS_FROM, DEFAULT_ZONNEBONUS_FROM),
+                ): DateSelector(),
+                # Geen default maar een voorgestelde waarde: zo kan de einddatum
+                # weer leeggemaakt worden (geen einde).
+                vol.Optional(
+                    CONF_ZONNEBONUS_UNTIL,
+                    description={"suggested_value": options.get(CONF_ZONNEBONUS_UNTIL)},
+                ): DateSelector(),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

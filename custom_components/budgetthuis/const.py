@@ -65,10 +65,15 @@ DEFAULT_GAS_INKOOPVERGOEDING = 0.06413
 # beursprijs tot EUR 0,20, alleen tussen zonsopkomst en zonsondergang en niet bij
 # een beursprijs van nul of lager. Zie https://www.budgetthuis.nl/pers/zonnebonus.
 # De ZonneBonus is een actie die Budget Thuis kan aanpassen of stoppen, dus het
-# percentage en de maximale beursprijs zijn opties (0% zet de bonus uit). De
-# grens van de eerste 5.000 kWh per leveringsjaar wordt niet bijgehouden.
+# percentage, de maximale beursprijs en de periode zijn opties (0% zet de bonus
+# uit, een lege einddatum betekent geen einde). Het einde van de saldering is
+# wettelijk en dus geen optie. De grens van de eerste 5.000 kWh per
+# leveringsjaar wordt niet bijgehouden.
 SALDERING_END_YEAR = 2027
 CONF_ZONNEBONUS_PERCENT = "zonnebonus_percent"
 CONF_ZONNEBONUS_MAX_BEURSPRIJS = "zonnebonus_max_beursprijs"
+CONF_ZONNEBONUS_FROM = "zonnebonus_from"
+CONF_ZONNEBONUS_UNTIL = "zonnebonus_until"
 DEFAULT_ZONNEBONUS_PERCENT = 30.0
 DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS = 0.20
+DEFAULT_ZONNEBONUS_FROM = "2027-01-01"

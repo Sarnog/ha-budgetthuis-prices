@@ -21,7 +21,9 @@
           "beursprijs_markup": "Extra correction on top of the live beursprijs (EUR/kWh, leave at 0 unless you have a specific reason)",
           "gas_inkoopvergoeding": "Inkoopvergoeding gas (EUR/m³, incl. BTW)",
           "zonnebonus_percent": "ZonneBonus on exported energy from 2027 (%, 0 = off)",
-          "zonnebonus_max_beursprijs": "ZonneBonus: maximum market price the bonus applies to (EUR/kWh)"
+          "zonnebonus_max_beursprijs": "ZonneBonus: maximum market price the bonus applies to (EUR/kWh)",
+          "zonnebonus_from": "ZonneBonus from (date)",
+          "zonnebonus_until": "ZonneBonus until and including (date, empty = no end)"
         }
       }
     }

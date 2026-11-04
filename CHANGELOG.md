@@ -1,5 +1,10 @@
 # Wijzigingen
 
+## 0.3.1
+
+### Toegevoegd
+- Opties *ZonneBonus vanaf* (standaard 1-1-2027) en *ZonneBonus tot en met* (standaard leeg, geen einde), zodat de bonus op een eigen datum aan en uit gaat als Budget Thuis de actie verschuift of stopt. Het einde van de saldering blijft 1-1-2027.
+
 ## 0.3.0
 
 ### Toegevoegd
