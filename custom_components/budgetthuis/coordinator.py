@@ -18,12 +18,15 @@ from .const import (
     CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
+    CONF_ZONNEBONUS_FROM,
     CONF_ZONNEBONUS_MAX_BEURSPRIJS,
     CONF_ZONNEBONUS_PERCENT,
+    CONF_ZONNEBONUS_UNTIL,
     DEFAULT_BEURSPRIJS_MARKUP,
     DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
+    DEFAULT_ZONNEBONUS_FROM,
     DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
     DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
@@ -127,14 +130,23 @@ def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
 
 
 def _export_config(hass: HomeAssistant, entry: ConfigEntry) -> ExportConfig:
-    """De ZonneBonus-opties, op de locatie van Home Assistant."""
+    """De ZonneBonus-opties, op de locatie van Home Assistant.
+
+    De datums staan als "JJJJ-MM-DD" in de opties (datumkiezer); een lege
+    einddatum betekent dat de bonus doorloopt.
+    """
     options = entry.options
+    until = options.get(CONF_ZONNEBONUS_UNTIL)
     return ExportConfig(
         location=Location(hass.config.latitude, hass.config.longitude),
         bonus_percent=options.get(CONF_ZONNEBONUS_PERCENT, DEFAULT_ZONNEBONUS_PERCENT),
         bonus_max_beursprijs=options.get(
             CONF_ZONNEBONUS_MAX_BEURSPRIJS, DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS
         ),
+        bonus_from=date.fromisoformat(
+            options.get(CONF_ZONNEBONUS_FROM, DEFAULT_ZONNEBONUS_FROM)
+        ),
+        bonus_until=date.fromisoformat(until) if until else None,
     )
 
 

@@ -38,11 +38,20 @@ class ExportConfig:
     """De instellingen van de ZonneBonus, voor de locatie van Home Assistant.
 
     bonus_percent 0 zet de bonus uit; de terugleverprijs is dan de beursprijs.
+    De bonus geldt van bonus_from tot en met bonus_until (None = geen einde).
     """
 
     location: Location
     bonus_percent: float
     bonus_max_beursprijs: float
+    bonus_from: date
+    bonus_until: date | None = None
+
+    def in_bonus_period(self, day: date) -> bool:
+        """Valt deze dag binnen de ingestelde periode van de ZonneBonus?"""
+        return self.bonus_from <= day and (
+            self.bonus_until is None or day <= self.bonus_until
+        )
 
 
 def _round_to_hour(moment: datetime) -> time:
@@ -83,10 +92,12 @@ def calculate_export_price(
     """De opbrengst van één teruggeleverde kWh in dit uur.
 
     Met saldering (voor 2027) is dat de contractprijs van het uur. Daarna de
-    beursprijs, plus de ZonneBonus binnen het tijdvak en bij een positieve
-    beursprijs. Geeft None als de benodigde prijs ontbreekt.
+    beursprijs, plus de ZonneBonus binnen de ingestelde periode, binnen het
+    tijdvak en bij een positieve beursprijs. Geeft None als de benodigde prijs
+    ontbreekt.
     """
-    if hour.start.astimezone(AMSTERDAM).year < SALDERING_END_YEAR:
+    start = hour.start.astimezone(AMSTERDAM)
+    if start.year < SALDERING_END_YEAR:
         return contract_price
 
     beursprijs = hour.commodity_net
@@ -94,7 +105,11 @@ def calculate_export_price(
         return None
 
     bonus = 0.0
-    if beursprijs > 0 and _in_bonus_window(hour, config.location):
+    if (
+        beursprijs > 0
+        and config.in_bonus_period(start.date())
+        and _in_bonus_window(hour, config.location)
+    ):
         bonus = (
             config.bonus_percent / 100 * min(beursprijs, config.bonus_max_beursprijs)
         )

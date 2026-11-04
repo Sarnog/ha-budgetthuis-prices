@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 import pytest
 
@@ -15,10 +15,25 @@ from custom_components.budgetthuis.export_pricing import (
 from custom_components.budgetthuis.parser import AMSTERDAM, HourPrice
 
 DE_BILT = Location(latitude=52.1, longitude=5.18)
-ZONNEBONUS = ExportConfig(
-    location=DE_BILT, bonus_percent=30.0, bonus_max_beursprijs=0.20
-)
 CONTRACT_PRICE = 0.42
+
+
+def _config(
+    percent: float,
+    max_beursprijs: float,
+    bonus_from: date = date(2027, 1, 1),
+    bonus_until: date | None = None,
+) -> ExportConfig:
+    return ExportConfig(
+        location=DE_BILT,
+        bonus_percent=percent,
+        bonus_max_beursprijs=max_beursprijs,
+        bonus_from=bonus_from,
+        bonus_until=bonus_until,
+    )
+
+
+ZONNEBONUS = _config(30.0, 0.20)
 
 
 def _hour(start: datetime, commodity_net: float | None) -> HourPrice:
@@ -92,18 +107,30 @@ def test_missing_beursprijs_returns_none() -> None:
 
 
 def test_bonus_percentage_and_cap_follow_the_options() -> None:
-    config = ExportConfig(
-        location=DE_BILT, bonus_percent=50.0, bonus_max_beursprijs=0.10
-    )
+    config = _config(50.0, 0.10)
     hour = _hour(_local(2027, 6, 15, 12), commodity_net=0.30)
 
     assert calculate_export_price(hour, CONTRACT_PRICE, config) == 0.35
 
 
 def test_zero_percent_switches_the_bonus_off() -> None:
-    config = ExportConfig(
-        location=DE_BILT, bonus_percent=0.0, bonus_max_beursprijs=0.20
-    )
+    config = _config(0.0, 0.20)
     hour = _hour(_local(2027, 6, 15, 12), commodity_net=0.10)
 
     assert calculate_export_price(hour, CONTRACT_PRICE, config) == 0.10
+
+
+@pytest.mark.parametrize(
+    ("day", "expected"),
+    [
+        (date(2027, 2, 28), 0.10),  # voor de begindatum
+        (date(2027, 3, 1), 0.13),  # de begindatum telt mee
+        (date(2027, 6, 30), 0.13),  # de einddatum telt mee
+        (date(2027, 7, 1), 0.10),  # na de einddatum
+    ],
+)
+def test_bonus_only_applies_within_the_configured_period(day, expected) -> None:
+    config = _config(30.0, 0.20, date(2027, 3, 1), date(2027, 6, 30))
+    hour = _hour(_local(day.year, day.month, day.day, 12), commodity_net=0.10)
+
+    assert calculate_export_price(hour, CONTRACT_PRICE, config) == expected

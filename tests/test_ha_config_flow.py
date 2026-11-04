@@ -67,6 +67,8 @@ async def test_options_change_the_contract_price(
             "gas_inkoopvergoeding": 0.05,
             "zonnebonus_percent": 0.0,
             "zonnebonus_max_beursprijs": 0.20,
+            "zonnebonus_from": "2027-01-01",
+            "zonnebonus_until": "2027-12-31",
         },
     )
     await hass.async_block_till_done()
@@ -74,4 +76,5 @@ async def test_options_change_the_contract_price(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["inkoopvergoeding"] == 0.02
     assert entry.options["zonnebonus_percent"] == 0.0
+    assert entry.options["zonnebonus_until"] == "2027-12-31"
     assert state_price(hass, current) == 0.3104  # (0,14 + 0,1) × 1,21 + 0,02
