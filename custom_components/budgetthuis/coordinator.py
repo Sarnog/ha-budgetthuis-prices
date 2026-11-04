@@ -18,15 +18,20 @@ from .const import (
     CONF_GAS_INKOOPVERGOEDING,
     CONF_INKOOPVERGOEDING,
     CONF_VAT_PERCENT,
+    CONF_ZONNEBONUS_MAX_BEURSPRIJS,
+    CONF_ZONNEBONUS_PERCENT,
     DEFAULT_BEURSPRIJS_MARKUP,
     DEFAULT_GAS_INKOOPVERGOEDING,
     DEFAULT_INKOOPVERGOEDING,
     DEFAULT_VAT_PERCENT,
+    DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS,
+    DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
     PRICE_TICK_MINUTES,
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
+from .export_pricing import ExportConfig, Location, calculate_export_price
 from .parser import (
     AMSTERDAM,
     ELECTRICITY,
@@ -42,13 +47,15 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class PricedHour:
-    """De prijs van één blok: de prijs voor het eigen contract (price) en de
-    all-in prijs die Budget Thuis zelf toont (site_price)."""
+    """De prijs van één blok: de prijs voor het eigen contract (price), de
+    all-in prijs die Budget Thuis zelf toont (site_price) en, alleen bij stroom,
+    de opbrengst van een teruggeleverde kWh (export_price)."""
 
     start: datetime
     end: datetime
     price: float | None
     site_price: float | None
+    export_price: float | None = None
 
 
 def _local_today() -> date:
@@ -119,22 +126,47 @@ def _gas_contract_config(entry: ConfigEntry) -> ContractConfig:
     )
 
 
-def _price_hours(hours: list[HourPrice], config: ContractConfig) -> list[PricedHour]:
-    return [
-        PricedHour(
-            start=hour.start,
-            end=hour.end,
-            price=calculate_price(hour, config),
-            site_price=hour.price,
+def _export_config(hass: HomeAssistant, entry: ConfigEntry) -> ExportConfig:
+    """De ZonneBonus-opties, op de locatie van Home Assistant."""
+    options = entry.options
+    return ExportConfig(
+        location=Location(hass.config.latitude, hass.config.longitude),
+        bonus_percent=options.get(CONF_ZONNEBONUS_PERCENT, DEFAULT_ZONNEBONUS_PERCENT),
+        bonus_max_beursprijs=options.get(
+            CONF_ZONNEBONUS_MAX_BEURSPRIJS, DEFAULT_ZONNEBONUS_MAX_BEURSPRIJS
+        ),
+    )
+
+
+def _price_hours(
+    hours: list[HourPrice], config: ContractConfig, export: ExportConfig | None
+) -> list[PricedHour]:
+    """Prijs de blokken; met export-instellingen ook de terugleverprijs (stroom)."""
+    priced_hours = []
+    for hour in hours:
+        price = calculate_price(hour, config)
+        priced_hours.append(
+            PricedHour(
+                start=hour.start,
+                end=hour.end,
+                price=price,
+                site_price=hour.price,
+                export_price=(
+                    None
+                    if export is None
+                    else calculate_export_price(hour, price, export)
+                ),
+            )
         )
-        for hour in hours
-    ]
+    return priced_hours
 
 
 def _price_days(
-    by_date: dict[str, list[HourPrice]], config: ContractConfig
+    by_date: dict[str, list[HourPrice]],
+    config: ContractConfig,
+    export: ExportConfig | None = None,
 ) -> dict[str, list[PricedHour]]:
-    return {day: _price_hours(hours, config) for day, hours in by_date.items()}
+    return {day: _price_hours(hours, config, export) for day, hours in by_date.items()}
 
 
 class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
@@ -190,6 +222,10 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             raise UpdateFailed(str(err)) from err
 
         return BudgetThuisData(
-            electricity=_price_days(electricity, _contract_config(self.entry)),
+            electricity=_price_days(
+                electricity,
+                _contract_config(self.entry),
+                _export_config(self.hass, self.entry),
+            ),
             gas=_price_days(gas, _gas_contract_config(self.entry)),
         )
