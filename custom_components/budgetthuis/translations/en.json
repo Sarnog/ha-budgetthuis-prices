@@ -49,6 +49,9 @@
       },
       "current_gas_price": {
         "name": "Current gas price"
+      },
+      "current_export_price": {
+        "name": "Current export price"
       }
     },
     "binary_sensor": {

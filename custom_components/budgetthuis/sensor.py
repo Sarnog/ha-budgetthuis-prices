@@ -48,6 +48,21 @@ def _serialize(hours: list[PricedHour]) -> list[dict[str, Any]]:
     ]
 
 
+def _serialize_export(hours: list[PricedHour]) -> list[dict[str, Any]]:
+    """De uurregels van de terugleverprijs, in de indeling van Nord Pool.
+
+    Omnibattery leest hiermee de terugleverprijs als aparte prijsbron.
+    """
+    return [
+        {
+            "start": h.start.isoformat(),
+            "end": h.end.isoformat(),
+            "value": h.export_price,
+        }
+        for h in hours
+    ]
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
@@ -65,6 +80,7 @@ async def async_setup_entry(
             BudgetThuisCheapestPeriodTodaySensor(coordinator, entry, device_info),
             BudgetThuisMostExpensivePeriodTodaySensor(coordinator, entry, device_info),
             BudgetThuisCurrentGasPriceSensor(coordinator, entry, device_info),
+            BudgetThuisCurrentExportPriceSensor(coordinator, entry, device_info),
         ]
     )
 
@@ -131,6 +147,34 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
             "average_tomorrow": average(data.tomorrow),
             "lowest_tomorrow": lowest(data.tomorrow),
             "highest_tomorrow": highest(data.tomorrow),
+        }
+
+
+class BudgetThuisCurrentExportPriceSensor(BudgetThuisBaseSensor):
+    """De opbrengst van een teruggeleverde kWh in het huidige uur.
+
+    Tot en met 2026 de contractprijs (saldering), daarna de beursprijs plus de
+    ZonneBonus (zie export_pricing.py).
+    """
+
+    _attr_translation_key = "current_export_price"
+    _attr_icon = "mdi:solar-power-variant"
+
+    @property
+    def native_value(self) -> float | None:
+        """De terugleverprijs van het uur waarin we nu zitten."""
+        hour = hour_for(self.data.today, dt_util.now())
+        return hour.export_price if hour else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """De terugleverprijzen per uur van vandaag en morgen."""
+        data = self.data
+        return {
+            "raw_today": _serialize_export(data.today),
+            "raw_tomorrow": _serialize_export(data.tomorrow),
+            "tomorrow_valid": data.tomorrow_valid,
+            "currency": CURRENCY,
         }
 
 

@@ -35,12 +35,15 @@ Prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW) + inkoopvergoed
 | Goedkoopste en duurste periode vandaag | Aaneengesloten reeks uren onder of boven het gemiddelde, bijvoorbeeld `15:00 - 19:00` |
 | Goedkoop uur | Aan zolang de prijs op of onder het daggemiddelde ligt |
 | Huidige gasprijs | EUR/m³, verandert eens per gasdag om 06:00 |
+| Huidige terugleverprijs | Opbrengst van een teruggeleverde kWh, met de uurwaarden van vandaag en morgen als attributen |
+
+De terugleverprijs is tot en met 2026 gelijk aan de contractprijs (saldering). Vanaf 2027 is het de beursprijs plus de [ZonneBonus](https://www.budgetthuis.nl/pers/zonnebonus): 30% extra over een beursprijs tot EUR 0,20, tussen zonsopkomst en zonsondergang, niet bij een beursprijs van nul of lager. Het tijdvak wordt per maand benaderd uit de zonsopkomst en -ondergang op de locatie van Home Assistant. De grens van 5.000 kWh per jaar wordt niet bijgehouden.
 
 De prijzen van morgen verschijnen zodra Budget Thuis ze publiceert, meestal in de middag. De prijzen schuiven op het hele uur door, ook rond de zomer- en wintertijd.
 
 ## Gebruik met Omnibattery
 
-De uurprijzen staan in de indeling van Nord Pool: `raw_today` en `raw_tomorrow` met `start`, `end` en `value`, plus `currency`. Kies in [Omnibattery](https://github.com/ffunes/Omnibattery) als prijsbron *Nordpool* en selecteer de sensor *Huidige prijs*.
+De uurprijzen staan in de indeling van Nord Pool: `raw_today` en `raw_tomorrow` met `start`, `end` en `value`, plus `currency`. Kies in [Omnibattery](https://github.com/ffunes/Omnibattery) als prijsbron *Nordpool* en selecteer de sensor *Huidige prijs*. Kies als terugleverprijs ook *Nordpool* met de sensor *Huidige terugleverprijs*.
 
 ## Ontwikkelen
 

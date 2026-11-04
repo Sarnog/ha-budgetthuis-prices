@@ -10,6 +10,7 @@ from custom_components.budgetthuis.const import DOMAIN
 from tests.ha_helpers import DAY_1, DAY_2, local, move_to
 
 CURRENT_PRICE = "sensor.budget_thuis_dynamic_prices_current_price"
+EXPORT_PRICE = "sensor.budget_thuis_dynamic_prices_current_export_price"
 CHEAP_HOUR = "binary_sensor.budget_thuis_dynamic_prices_cheap_hour"
 CHEAPEST_PERIOD = "sensor.budget_thuis_dynamic_prices_cheapest_period_today"
 PRICIEST_PERIOD = "sensor.budget_thuis_dynamic_prices_most_expensive_period_today"
@@ -27,6 +28,22 @@ async def test_raw_prices_follow_the_nord_pool_layout(hass, setup_integration) -
         for entry in entries:
             assert {"start", "end", "value", "price", "site_price"} <= entry.keys()
             assert entry["value"] == entry["price"]
+
+
+async def test_export_price_follows_the_contract_price_during_saldering(
+    hass, setup_integration
+) -> None:
+    """In 2026 is een teruggeleverde kWh evenveel waard als een afgenomen kWh."""
+    await setup_integration(local(DAY_1, 14, 23))
+    export = hass.states.get(EXPORT_PRICE)
+    current = hass.states.get(CURRENT_PRICE)
+
+    assert export.state == current.state
+    assert export.attributes["currency"] == "EUR"
+    assert export.attributes["tomorrow_valid"] is True
+    for key in ("raw_today", "raw_tomorrow"):
+        values = [entry["value"] for entry in export.attributes[key]]
+        assert values == [entry["price"] for entry in current.attributes[key]]
 
 
 async def test_period_sensors_report_the_runs_around_the_average(

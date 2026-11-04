@@ -49,6 +49,9 @@
       },
       "current_gas_price": {
         "name": "Huidige gasprijs"
+      },
+      "current_export_price": {
+        "name": "Huidige terugleverprijs"
       }
     },
     "binary_sensor": {

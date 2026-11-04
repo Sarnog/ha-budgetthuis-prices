@@ -56,3 +56,16 @@ DEFAULT_INKOOPVERGOEDING = 0.016822
 DEFAULT_VAT_PERCENT = 21.0
 DEFAULT_BEURSPRIJS_MARKUP = 0.0
 DEFAULT_GAS_INKOOPVERGOEDING = 0.06413
+
+# Terugleverprijs. Tot en met 2026 geldt de salderingsregeling: teruggeleverde
+# stroom wordt verrekend met afgenomen stroom, dus een teruggeleverde kWh is dan
+# evenveel waard als de contractprijs van dat uur. Vanaf 1 januari 2027 vervalt
+# saldering en betaalt Budget Thuis bij een dynamisch contract de beursprijs
+# (zonder BTW en zonder terugleverkosten), plus de ZonneBonus: 30% extra over een
+# beursprijs tot EUR 0,20, alleen tussen zonsopkomst en zonsondergang en niet bij
+# een beursprijs van nul of lager. Zie https://www.budgetthuis.nl/pers/zonnebonus.
+# De ZonneBonus is een actie die Budget Thuis kan aanpassen; de grens van de
+# eerste 5.000 kWh per leveringsjaar wordt niet bijgehouden.
+SALDERING_END_YEAR = 2027
+ZONNEBONUS_FACTOR = 0.30
+ZONNEBONUS_MAX_BEURSPRIJS = 0.20
