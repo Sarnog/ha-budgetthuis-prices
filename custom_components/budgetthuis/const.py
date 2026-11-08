@@ -15,6 +15,11 @@ NEXT_DATA_PATTERN = r'<script id="__NEXT_DATA__" type="application/json">(.*?)</
 # snel op te pikken zonder de site te belasten.
 UPDATE_INTERVAL = timedelta(hours=1)
 
+# Mislukt het ophalen (bijvoorbeeld een 502 van de site), dan blijven de bekende
+# prijzen staan zolang ze het huidige uur dekken, en wordt het elke minuut
+# opnieuw geprobeerd tot het weer lukt. Daarna geldt weer UPDATE_INTERVAL.
+RETRY_INTERVAL = timedelta(minutes=1)
+
 # De entiteitstoestanden worden op dit klokraster opnieuw bepaald, los van het
 # ophalen hierboven: het moment van ophalen hangt af van wanneer Home Assistant
 # startte (bijvoorbeeld 14:23, 15:23, ...), en daarop vertrouwen liet de prijs

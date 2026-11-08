@@ -31,6 +31,7 @@ from .const import (
     DEFAULT_ZONNEBONUS_PERCENT,
     DOMAIN,
     PRICE_TICK_MINUTES,
+    RETRY_INTERVAL,
     TARIFF_URL,
     UPDATE_INTERVAL,
 )
@@ -44,6 +45,7 @@ from .parser import (
     parse_tariff_days,
 )
 from .pricing import ContractConfig, calculate_price
+from .stats import hour_for
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -217,6 +219,27 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
         self.async_update_listeners()
 
     async def _async_update_data(self) -> BudgetThuisData:
+        """Haal de tarieven op; bij een storing blijven de bekende prijzen staan.
+
+        De pagina bevat de prijzen van vandaag (en vanaf de middag van morgen),
+        dus een mislukte ronde hoeft de sensors niet onbeschikbaar te maken
+        zolang er al een prijs voor het huidige uur is. Prijsgestuurde
+        integraties zoals Omnibattery stoppen anders met ontladen. Tijdens de
+        storing wordt het elke RETRY_INTERVAL opnieuw geprobeerd.
+        """
+        try:
+            data = await self._async_fetch_data()
+        except UpdateFailed as err:
+            if self.data is None or hour_for(self.data.today, dt_util.now()) is None:
+                raise
+            _LOGGER.warning("%s; de laatst bekende prijzen blijven in gebruik", err)
+            self.update_interval = RETRY_INTERVAL
+            return self.data
+        self.update_interval = UPDATE_INTERVAL
+        return data
+
+    async def _async_fetch_data(self) -> BudgetThuisData:
+        """Lees de tarievenpagina en prijs elke dag voor het eigen contract."""
         session = async_get_clientsession(self.hass)
         try:
             async with session.get(TARIFF_URL) as response:
