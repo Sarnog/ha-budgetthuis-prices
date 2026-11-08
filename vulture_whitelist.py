@@ -19,6 +19,7 @@ async_step_init
 
 # Coordinator en entiteiten
 _async_update_data
+update_interval
 _attr_unique_id
 _attr_device_info
 native_value

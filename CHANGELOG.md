@@ -1,5 +1,10 @@
 # Wijzigingen
 
+## 0.3.2
+
+### Opgelost
+- Eén mislukte ophaalronde (bijvoorbeeld een 502 van de Budget Thuis-site) maakte alle sensors een uur lang onbeschikbaar, terwijl de prijzen van vandaag al binnen waren. Prijsgestuurde integraties zoals Omnibattery stopten daardoor met ontladen. Nu blijven de laatst bekende prijzen in gebruik zolang ze het huidige uur dekken, en wordt het elke minuut opnieuw geprobeerd tot het ophalen weer lukt. Pas als er geen prijs meer is voor het huidige uur, worden de sensors onbeschikbaar.
+
 ## 0.3.1
 
 ### Toegevoegd
