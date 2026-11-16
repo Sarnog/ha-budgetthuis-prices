@@ -10,17 +10,22 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
-from .coordinator import BudgetThuisCoordinator, BudgetThuisData
+from .coordinator import (
+    BudgetThuisConfigEntry,
+    BudgetThuisCoordinator,
+    BudgetThuisData,
+)
 from .helpers import device_info as get_device_info
 from .stats import average, hour_for
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: BudgetThuisConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Zet de binary sensors op vanuit een config entry."""
-    coordinator: BudgetThuisCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     device_info = get_device_info(entry)
 
     async_add_entities(

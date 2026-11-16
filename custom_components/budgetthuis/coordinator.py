@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
+from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -48,6 +49,9 @@ from .pricing import ContractConfig, calculate_price
 from .stats import hour_for
 
 _LOGGER = logging.getLogger(__name__)
+
+# Een config entry van deze integratie, met de coordinator als runtime_data.
+type BudgetThuisConfigEntry = ConfigEntry[BudgetThuisCoordinator]
 
 
 @dataclass
@@ -245,7 +249,7 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             async with session.get(TARIFF_URL) as response:
                 response.raise_for_status()
                 html = await response.text()
-        except Exception as err:  # noqa: BLE001 - elke fout wordt als UpdateFailed gemeld
+        except (ClientError, TimeoutError) as err:
             raise UpdateFailed(
                 f"Fout bij het ophalen van de tarievenpagina: {err}"
             ) from err
