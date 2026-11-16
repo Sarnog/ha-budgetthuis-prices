@@ -1,8 +1,8 @@
 # Budget Thuis Dynamic Prices
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories/)
-[![Release](https://img.shields.io/github/v/release/Sarnog/ha-budgetthuis-prices)](https://github.com/Sarnog/ha-budgetthuis-prices/releases)
-[![Tests](https://github.com/Sarnog/ha-budgetthuis-prices/actions/workflows/tests.yml/badge.svg)](https://github.com/Sarnog/ha-budgetthuis-prices/actions/workflows/tests.yml)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://hacs.xyz/)
+[![Release](https://img.shields.io/github/v/release/lvaoliveira/ha-budgetthuis-prices)](https://github.com/lvaoliveira/ha-budgetthuis-prices/releases)
+[![Tests](https://github.com/lvaoliveira/ha-budgetthuis-prices/actions/workflows/tests.yml/badge.svg)](https://github.com/lvaoliveira/ha-budgetthuis-prices/actions/workflows/tests.yml)
 
 **[English](#english)** · **[Nederlands](#nederlands)**
 
@@ -18,9 +18,8 @@ The integration reads Budget Thuis's public [tariff page](https://www.budgetthui
 
 **Via HACS**
 
-1. In HACS, open the menu (⋮) and choose **Custom repositories**.
-2. Add `https://github.com/Sarnog/ha-budgetthuis-prices` with the type **Integration**.
-3. Search for **Budget Thuis Dynamic Prices**, download it and restart Home Assistant.
+1. Open HACS and search for **Budget Thuis Dynamic Prices**.
+2. Download it and restart Home Assistant.
 
 **Manually**
 
@@ -99,9 +98,8 @@ De integratie leest de openbare [tarievenpagina](https://www.budgetthuis.nl/ener
 
 **Via HACS**
 
-1. Open in HACS het menu (⋮) en kies **Aangepaste repositories**.
-2. Voeg `https://github.com/Sarnog/ha-budgetthuis-prices` toe met als type **Integratie**.
-3. Zoek **Budget Thuis Dynamic Prices**, download hem en herstart Home Assistant.
+1. Open HACS en zoek **Budget Thuis Dynamic Prices**.
+2. Download hem en herstart Home Assistant.
 
 **Handmatig**
 
