@@ -25,3 +25,7 @@ _attr_device_info
 native_value
 extra_state_attributes
 is_on
+_unrecorded_attributes
+
+# Diagnostiek
+async_get_config_entry_diagnostics

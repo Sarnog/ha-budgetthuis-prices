@@ -13,9 +13,10 @@ from datetime import UTC, datetime
 from itertools import pairwise
 from zoneinfo import ZoneInfo
 
-from .const import NEXT_DATA_PATTERN
-
 AMSTERDAM = ZoneInfo("Europe/Amsterdam")
+
+# De tarieven staan als JSON in de Next.js-payload van de pagina.
+NEXT_DATA_PATTERN = r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>'
 
 # Sleutels van de tariefenlijsten per dag in de payload van de pagina. Stroom
 # komt in uurblokken; gas in twee blokken per kalenderdag (00:00-06:00, nog de

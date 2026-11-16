@@ -7,22 +7,15 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import CURRENCY, CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3
-from .coordinator import (
-    BudgetThuisConfigEntry,
-    BudgetThuisCoordinator,
-    BudgetThuisData,
-    PricedHour,
-)
-from .helpers import device_info as get_device_info
+from .coordinator import BudgetThuisConfigEntry
+from .entity import BudgetThuisEntity
+from .models import PricedHour
 from .stats import (
     average,
     cheapest_period,
@@ -75,47 +68,20 @@ async def async_setup_entry(
 ) -> None:
     """Zet de sensors op vanuit een config entry."""
     coordinator = entry.runtime_data
-    device_info = get_device_info(entry)
 
     async_add_entities(
         [
-            BudgetThuisCurrentPriceSensor(coordinator, entry, device_info),
-            BudgetThuisNextHourPriceSensor(coordinator, entry, device_info),
-            BudgetThuisTodayAveragePriceSensor(coordinator, entry, device_info),
-            BudgetThuisLowestPriceTodaySensor(coordinator, entry, device_info),
-            BudgetThuisHighestPriceTodaySensor(coordinator, entry, device_info),
-            BudgetThuisCheapestPeriodTodaySensor(coordinator, entry, device_info),
-            BudgetThuisMostExpensivePeriodTodaySensor(coordinator, entry, device_info),
-            BudgetThuisCurrentGasPriceSensor(coordinator, entry, device_info),
-            BudgetThuisCurrentExportPriceSensor(coordinator, entry, device_info),
+            BudgetThuisCurrentPriceSensor(coordinator),
+            BudgetThuisNextHourPriceSensor(coordinator),
+            BudgetThuisTodayAveragePriceSensor(coordinator),
+            BudgetThuisLowestPriceTodaySensor(coordinator),
+            BudgetThuisHighestPriceTodaySensor(coordinator),
+            BudgetThuisCheapestPeriodTodaySensor(coordinator),
+            BudgetThuisMostExpensivePeriodTodaySensor(coordinator),
+            BudgetThuisCurrentGasPriceSensor(coordinator),
+            BudgetThuisCurrentExportPriceSensor(coordinator),
         ]
     )
-
-
-class BudgetThuisEntity(CoordinatorEntity[BudgetThuisCoordinator]):
-    """Gedeelde opzet voor alle Budget Thuis-entiteiten.
-
-    Een subklasse zet _attr_translation_key: die bepaalt zowel de (vertaalde)
-    naam als het unieke ID van de entiteit.
-    """
-
-    _attr_has_entity_name = True
-
-    def __init__(
-        self,
-        coordinator: BudgetThuisCoordinator,
-        entry: ConfigEntry,
-        device_info: DeviceInfo,
-    ) -> None:
-        """Maak de entiteit aan onder het gedeelde apparaat."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_{self._attr_translation_key}"
-        self._attr_device_info = device_info
-
-    @property
-    def data(self) -> BudgetThuisData:
-        """De actuele tariefgegevens van de coordinator."""
-        return self.coordinator.data
 
 
 class BudgetThuisBaseSensor(BudgetThuisEntity, SensorEntity):
@@ -123,7 +89,6 @@ class BudgetThuisBaseSensor(BudgetThuisEntity, SensorEntity):
 
     _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:currency-eur"
     _attr_suggested_display_precision = 3
 
 
@@ -131,6 +96,9 @@ class BudgetThuisCurrentPriceSensor(BudgetThuisBaseSensor):
     """De prijs van het huidige uur voor het eigen contract."""
 
     _attr_translation_key = "current_price"
+    # De uurlijsten zijn groot en veranderen elke dag; in de recorder zouden
+    # ze bij elke toestandswijziging opnieuw worden opgeslagen.
+    _unrecorded_attributes = frozenset({"raw_today", "raw_tomorrow"})
 
     @property
     def native_value(self) -> float | None:
@@ -165,7 +133,9 @@ class BudgetThuisCurrentExportPriceSensor(BudgetThuisBaseSensor):
     """
 
     _attr_translation_key = "current_export_price"
-    _attr_icon = "mdi:solar-power-variant"
+    # De uurlijsten zijn groot en veranderen elke dag; in de recorder zouden
+    # ze bij elke toestandswijziging opnieuw worden opgeslagen.
+    _unrecorded_attributes = frozenset({"raw_today", "raw_tomorrow"})
 
     @property
     def native_value(self) -> float | None:
@@ -252,9 +222,11 @@ class BudgetThuisCurrentGasPriceSensor(BudgetThuisEntity, SensorEntity):
     """
 
     _attr_translation_key = "current_gas_price"
+    # De uurlijsten zijn groot en veranderen elke dag; in de recorder zouden
+    # ze bij elke toestandswijziging opnieuw worden opgeslagen.
+    _unrecorded_attributes = frozenset({"raw_today", "raw_tomorrow"})
     _attr_native_unit_of_measurement = CURRENCY_EUR_PER_M3
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:fire"
     _attr_suggested_display_precision = 3
 
     @property
@@ -285,7 +257,6 @@ class BudgetThuisPeriodSensor(BudgetThuisEntity, SensorEntity):
     """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:clock-outline"
 
     # De zoekfunctie van de subklasse, bijvoorbeeld stats.cheapest_period.
     _find_period: Callable[[list[PricedHour]], tuple[datetime, datetime, float] | None]

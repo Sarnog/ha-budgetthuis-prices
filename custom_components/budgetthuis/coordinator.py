@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
-from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -14,6 +12,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .api import BudgetThuisApiClient, BudgetThuisApiError
 from .const import (
     CONF_BEURSPRIJS_MARKUP,
     CONF_GAS_INKOOPVERGOEDING,
@@ -33,12 +32,11 @@ from .const import (
     DOMAIN,
     PRICE_TICK_MINUTES,
     RETRY_INTERVAL,
-    TARIFF_URL,
     UPDATE_INTERVAL,
 )
 from .export_pricing import ExportConfig, Location, calculate_export_price
+from .models import BudgetThuisData, PricedHour
 from .parser import (
-    AMSTERDAM,
     ELECTRICITY,
     GAS,
     HourPrice,
@@ -52,65 +50,6 @@ _LOGGER = logging.getLogger(__name__)
 
 # Een config entry van deze integratie, met de coordinator als runtime_data.
 type BudgetThuisConfigEntry = ConfigEntry[BudgetThuisCoordinator]
-
-
-@dataclass
-class PricedHour:
-    """De prijs van één blok: de prijs voor het eigen contract (price), de
-    all-in prijs die Budget Thuis zelf toont (site_price) en, alleen bij stroom,
-    de opbrengst van een teruggeleverde kWh (export_price)."""
-
-    start: datetime
-    end: datetime
-    price: float | None
-    site_price: float | None
-    export_price: float | None = None
-
-
-def _local_today() -> date:
-    """De datum van vandaag op de (Amsterdamse) kalender van de tarievenpagina."""
-    return dt_util.now(AMSTERDAM).date()
-
-
-@dataclass
-class BudgetThuisData:
-    """Geprijsde tariefgegevens voor elke dag op de pagina, per ISO-datum.
-
-    "Vandaag" en "morgen" worden bij het uitlezen aan de klok gekoppeld in
-    plaats van bij het ophalen, zodat "morgen" van gisteren om middernacht
-    meteen "vandaag" wordt en niet pas bij de volgende ophaalronde.
-    """
-
-    electricity: dict[str, list[PricedHour]]
-    gas: dict[str, list[PricedHour]]
-
-    @staticmethod
-    def _day(by_date: dict[str, list[PricedHour]], offset: int) -> list[PricedHour]:
-        return by_date.get((_local_today() + timedelta(days=offset)).isoformat(), [])
-
-    @property
-    def today(self) -> list[PricedHour]:
-        return self._day(self.electricity, 0)
-
-    @property
-    def tomorrow(self) -> list[PricedHour]:
-        return self._day(self.electricity, 1)
-
-    @property
-    def tomorrow_valid(self) -> bool:
-        return len(self.tomorrow) > 0
-
-    @property
-    def gas_today(self) -> list[PricedHour]:
-        return self._day(self.gas, 0)
-
-    @property
-    def gas_tomorrow(self) -> list[PricedHour]:
-        return self._day(self.gas, 1)
-
-    @property
-    def gas_tomorrow_valid(self) -> bool:
-        return len(self.gas_tomorrow) > 0
 
 
 def _contract_config(entry: ConfigEntry) -> ContractConfig:
@@ -202,6 +141,7 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
             update_interval=UPDATE_INTERVAL,
         )
         self.entry = entry
+        self.api = BudgetThuisApiClient(async_get_clientsession(hass))
 
     @callback
     def async_start_price_clock(self) -> CALLBACK_TYPE:
@@ -244,15 +184,10 @@ class BudgetThuisCoordinator(DataUpdateCoordinator[BudgetThuisData]):
 
     async def _async_fetch_data(self) -> BudgetThuisData:
         """Lees de tarievenpagina en prijs elke dag voor het eigen contract."""
-        session = async_get_clientsession(self.hass)
         try:
-            async with session.get(TARIFF_URL) as response:
-                response.raise_for_status()
-                html = await response.text()
-        except (ClientError, TimeoutError) as err:
-            raise UpdateFailed(
-                f"Fout bij het ophalen van de tarievenpagina: {err}"
-            ) from err
+            html = await self.api.async_get_tariff_page()
+        except BudgetThuisApiError as err:
+            raise UpdateFailed(str(err)) from err
 
         try:
             electricity = parse_tariff_days(html, ELECTRICITY)

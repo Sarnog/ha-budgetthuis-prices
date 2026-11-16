@@ -11,6 +11,7 @@ from tests.ha_helpers import DAY_1, DAY_2, local, move_to
 
 CURRENT_PRICE = "sensor.budget_thuis_dynamic_prices_current_price"
 EXPORT_PRICE = "sensor.budget_thuis_dynamic_prices_current_export_price"
+GAS_PRICE = "sensor.budget_thuis_dynamic_prices_current_gas_price"
 CHEAP_HOUR = "binary_sensor.budget_thuis_dynamic_prices_cheap_hour"
 CHEAPEST_PERIOD = "sensor.budget_thuis_dynamic_prices_cheapest_period_today"
 PRICIEST_PERIOD = "sensor.budget_thuis_dynamic_prices_most_expensive_period_today"
@@ -104,3 +105,14 @@ async def test_entity_names_follow_the_home_assistant_language(
     assert (
         hass.states.get(entity_id).name == "Budget Thuis Dynamic Prices Huidige prijs"
     )
+
+
+async def test_hourly_lists_stay_out_of_the_recorder(hass, setup_integration) -> None:
+    """raw_today en raw_tomorrow staan wel op de sensor, maar niet in de database."""
+    await setup_integration(local(DAY_1, 14, 23))
+    component = hass.data["entity_components"]["sensor"]
+
+    for entity_id in (CURRENT_PRICE, EXPORT_PRICE, GAS_PRICE):
+        entity = component.get_entity(entity_id)
+        assert {"raw_today", "raw_tomorrow"} <= entity._unrecorded_attributes
+        assert "raw_today" in hass.states.get(entity_id).attributes

@@ -1,6 +1,6 @@
 """Statistieken over de uurprijzen (PricedHour) van één dag.
 
-Werkt structureel op alles met de vorm van coordinator.PricedHour (start, end,
+Werkt structureel op alles met de vorm van models.PricedHour (start, end,
 price). PricedHour wordt alleen voor typering geïmporteerd, dus deze module
 heeft geen Home Assistant nodig en is met gewone pytest te testen, net als
 parser.py en pricing.py.
@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from .const import PRICE_DECIMALS
 
 if TYPE_CHECKING:
-    from .coordinator import PricedHour
+    from .models import PricedHour
 
 
 def hour_for(hours: list[PricedHour], moment: datetime) -> PricedHour | None:

@@ -65,6 +65,8 @@ price = (market price + correction + energy tax) × (1 + VAT / 100) + purchasing
 
 **Export price.** Until the end of 2026, the export price equals your contract price, because of net metering (*salderingsregeling*). From 2027 onwards it is the market price plus Budget Thuis's [ZonneBonus](https://www.budgetthuis.nl/pers/zonnebonus): by default 30% extra on a market price of up to EUR 0.20 (both adjustable, as is the period), only between sunrise and sunset, and never when the market price is zero or negative. Sunrise and sunset are approximated per month from the location of your Home Assistant. The annual cap of 5,000 kWh is not tracked.
 
+**History.** The hourly lists (`raw_today` and `raw_tomorrow`) are left out of the recorder, because storing them on every state change bloats the database. They are always available on the live sensor; the sensor values themselves are recorded as usual.
+
 **Timing.** Tomorrow's prices appear as soon as Budget Thuis publishes them, usually in the afternoon. Prices switch exactly on the hour, including on the days the clocks change for daylight saving time. If the tariff page is temporarily unreachable, the last known prices stay in use for as long as they cover the current hour, and the integration retries every minute.
 
 ### Using it with Omnibattery
@@ -82,7 +84,22 @@ python3 -m venv .venv
 .venv/bin/pytest tests --cov
 ```
 
-The same checks run in CI, and test coverage must stay at 100%, branches included. The price logic (`parser.py`, `pricing.py`, `export_pricing.py`, `stats.py`) does not depend on Home Assistant. The Home Assistant glue (`coordinator.py`, `config_flow.py`, `sensor.py`, `binary_sensor.py`) is tested against a real Home Assistant test instance.
+The same checks run in CI, and test coverage must stay at 100%, branches included. The code is split by responsibility:
+
+| File | Role |
+|---|---|
+| `api.py` | Fetches the tariff page |
+| `parser.py` | Reads the hourly tariffs from the page |
+| `pricing.py`, `export_pricing.py` | Calculate the contract price and the export price |
+| `models.py` | Data models shared across the integration |
+| `stats.py` | Daily statistics (average, cheapest period, and so on) |
+| `coordinator.py` | Ties fetching, parsing and pricing together on a schedule |
+| `entity.py` | Shared base class and device for all entities |
+| `sensor.py`, `binary_sensor.py` | The entities |
+| `config_flow.py` | Setup and options |
+| `diagnostics.py` | Data for **Download diagnostics** |
+
+Everything from `parser.py` to `stats.py` is independent of Home Assistant and tested with plain pytest. The rest is tested against a real Home Assistant test instance.
 
 This integration is not affiliated with or endorsed by Budget Thuis.
 
@@ -145,6 +162,8 @@ prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW / 100) + inkoopv
 
 **Terugleverprijs.** Tot en met 2026 is de terugleverprijs gelijk aan je contractprijs, vanwege de salderingsregeling. Vanaf 2027 is het de beursprijs plus de [ZonneBonus](https://www.budgetthuis.nl/pers/zonnebonus) van Budget Thuis: standaard 30% extra over een beursprijs tot EUR 0,20 (allebei instelbaar, net als de periode), alleen tussen zonsopkomst en zonsondergang en nooit bij een beursprijs van nul of lager. Zonsopkomst en -ondergang worden per maand benaderd vanaf de locatie van je Home Assistant. De jaargrens van 5.000 kWh wordt niet bijgehouden.
 
+**Geschiedenis.** De uurlijsten (`raw_today` en `raw_tomorrow`) worden niet in de recorder opgeslagen, omdat ze de database bij elke toestandswijziging flink laten groeien. Op de sensor zelf zijn ze altijd beschikbaar; de sensorwaarden zelf worden gewoon bewaard.
+
 **Timing.** De prijzen van morgen verschijnen zodra Budget Thuis ze publiceert, meestal in de middag. De prijzen wisselen precies op het hele uur, ook op de dagen dat de klok verzet wordt voor zomer- of wintertijd. Is de tarievenpagina even onbereikbaar, dan blijven de laatst bekende prijzen in gebruik zolang ze het huidige uur dekken, en probeert de integratie het elke minuut opnieuw.
 
 ### Gebruik met Omnibattery
@@ -162,6 +181,21 @@ python3 -m venv .venv
 .venv/bin/pytest tests --cov
 ```
 
-Dezelfde controles draaien in CI, en de testdekking moet 100% blijven, vertakkingen inbegrepen. De prijslogica (`parser.py`, `pricing.py`, `export_pricing.py`, `stats.py`) is los van Home Assistant. De aansluiting op Home Assistant (`coordinator.py`, `config_flow.py`, `sensor.py`, `binary_sensor.py`) wordt getest tegen een echte Home Assistant-testinstantie.
+Dezelfde controles draaien in CI, en de testdekking moet 100% blijven, vertakkingen inbegrepen. De code is per taak opgedeeld:
+
+| Bestand | Taak |
+|---|---|
+| `api.py` | Haalt de tarievenpagina op |
+| `parser.py` | Leest de uurtarieven van de pagina |
+| `pricing.py`, `export_pricing.py` | Berekenen de contractprijs en de terugleverprijs |
+| `models.py` | Datamodellen die de hele integratie gebruikt |
+| `stats.py` | Dagstatistieken (gemiddelde, goedkoopste periode, enzovoort) |
+| `coordinator.py` | Verbindt ophalen, inlezen en prijzen volgens een schema |
+| `entity.py` | Gedeelde basisklasse en apparaat voor alle entiteiten |
+| `sensor.py`, `binary_sensor.py` | De entiteiten |
+| `config_flow.py` | Instellen en opties |
+| `diagnostics.py` | Gegevens voor **Diagnostiek downloaden** |
+
+Alles van `parser.py` tot en met `stats.py` is los van Home Assistant en wordt met gewone pytest getest. De rest wordt getest tegen een echte Home Assistant-testinstantie.
 
 Deze integratie is niet verbonden aan of goedgekeurd door Budget Thuis.

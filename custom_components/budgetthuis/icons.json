@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "sensor": {
+      "current_price": { "default": "mdi:currency-eur" },
+      "next_hour_price": { "default": "mdi:currency-eur" },
+      "today_average_price": { "default": "mdi:currency-eur" },
+      "lowest_price_today": { "default": "mdi:currency-eur" },
+      "highest_price_today": { "default": "mdi:currency-eur" },
+      "cheapest_period_today": { "default": "mdi:clock-outline" },
+      "most_expensive_period_today": { "default": "mdi:clock-outline" },
+      "current_gas_price": { "default": "mdi:fire" },
+      "current_export_price": { "default": "mdi:solar-power-variant" }
+    },
+    "binary_sensor": {
+      "cheap_hour": { "default": "mdi:cash-check" }
+    }
+  }
+}
