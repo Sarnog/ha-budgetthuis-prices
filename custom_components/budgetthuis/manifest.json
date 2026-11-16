@@ -1,6 +1,7 @@
 {
   "domain": "budgetthuis",
   "name": "Budget Thuis Dynamic Prices",
+  "categories": ["energy.energy_prices"],
   "codeowners": ["@lvaoliveira"],
   "config_flow": true,
   "dependencies": [],
