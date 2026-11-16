@@ -1,5 +1,16 @@
 # Wijzigingen
 
+## 0.3.3
+
+### Gewijzigd
+- README herschreven, volledig in het Engels en het Nederlands.
+- `hacs.json` vermeldt nu het land (`NL`), zodat HACS de integratie bij Nederlandse gebruikers toont.
+
+### Intern
+- De coordinator staat in `entry.runtime_data` in plaats van in `hass.data`, met een getypeerde config entry. Dat is het huidige patroon van Home Assistant; Home Assistant ruimt de coordinator nu zelf op bij het ontladen.
+- Platforms als `Platform`-enum in plaats van losse tekst.
+- Bij het ophalen worden alleen netwerkfouten en time-outs afgevangen (`aiohttp.ClientError`, `TimeoutError`) in plaats van elke uitzondering, zodat echte programmeerfouten zichtbaar blijven in het log.
+
 ## 0.3.2
 
 ### Opgelost

@@ -15,8 +15,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import CURRENCY, CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3, DOMAIN
-from .coordinator import BudgetThuisCoordinator, BudgetThuisData, PricedHour
+from .const import CURRENCY, CURRENCY_EUR_PER_KWH, CURRENCY_EUR_PER_M3
+from .coordinator import (
+    BudgetThuisConfigEntry,
+    BudgetThuisCoordinator,
+    BudgetThuisData,
+    PricedHour,
+)
 from .helpers import device_info as get_device_info
 from .stats import (
     average,
@@ -64,10 +69,12 @@ def _serialize_export(hours: list[PricedHour]) -> list[dict[str, Any]]:
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: BudgetThuisConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Zet de sensors op vanuit een config entry."""
-    coordinator: BudgetThuisCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     device_info = get_device_info(entry)
 
     async_add_entities(

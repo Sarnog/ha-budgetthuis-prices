@@ -7,7 +7,6 @@ from datetime import timedelta
 import pytest
 
 from custom_components.budgetthuis.const import (
-    DOMAIN,
     RETRY_INTERVAL,
     TARIFF_URL,
     UPDATE_INTERVAL,
@@ -28,7 +27,7 @@ CURRENT_PRICE = "sensor.budget_thuis_dynamic_prices_current_price"
 
 
 def _coordinator(hass, entry) -> BudgetThuisCoordinator:
-    return hass.data[DOMAIN][entry.entry_id]
+    return entry.runtime_data
 
 
 def _serve(aioclient_mock, **kwargs) -> None:

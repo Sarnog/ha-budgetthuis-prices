@@ -100,9 +100,6 @@ def parse_tariff_days(
 
     tariff_key kiest de commodity (ELECTRICITY of GAS). Een pagina zonder
     regels voor die commodity geeft een lege dict, geen fout.
-
-    Volgt de uitlezing die al bewezen is in `fetchBudgetThuis` in
-    node/src/providers/price-provider.js van het arandu-project.
     """
     match = re.search(NEXT_DATA_PATTERN, html, re.DOTALL)
     if not match:
