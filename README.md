@@ -49,7 +49,7 @@ The defaults are only a starting point and may not match your contract. Copy the
 The price is calculated as:
 
 ```
-price = (market price + correction + energy tax) × (1 + VAT) + purchasing fee
+price = (market price + correction + energy tax) × (1 + VAT / 100) + purchasing fee
 ```
 
 ### Entities
@@ -130,7 +130,7 @@ De beginwaarden zijn een startpunt en kloppen niet per se met jouw contract. Nee
 De prijs wordt zo berekend:
 
 ```
-prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW) + inkoopvergoeding
+prijs = (beursprijs + correctie + energiebelasting) × (1 + BTW / 100) + inkoopvergoeding
 ```
 
 ### Entiteiten
