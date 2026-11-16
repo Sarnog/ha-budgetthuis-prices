@@ -1,5 +1,19 @@
 # Wijzigingen
 
+## 0.4.0
+
+### Toegevoegd
+- Diagnostiek: via *Diagnostiek downloaden* krijg je de instellingen en een overzicht van de ingelezen dagen, handig bij een probleemmelding.
+
+### Gewijzigd
+- De uurlijsten `raw_today` en `raw_tomorrow` worden niet meer in de recorder opgeslagen. Ze staan nog steeds op de sensor; alleen de geschiedenis van die attributen verdwijnt, wat de database klein houdt. De sensorwaarden zelf worden gewoon bewaard.
+- Iconen komen uit `icons.json` in plaats van uit de code. Ze zien er hetzelfde uit.
+
+### Intern
+- Opgedeeld per taak: `api.py` (ophalen), `models.py` (datamodellen), `entity.py` (gedeelde basisklasse en apparaat, vervangt `helpers.py`). `binary_sensor.py` gebruikt nu dezelfde basisklasse als de sensors in plaats van een kopie.
+- `NEXT_DATA_PATTERN` staat in `parser.py`, de enige plek die het gebruikt.
+- Entity-ID's en unieke ID's zijn ongewijzigd.
+
 ## 0.3.3
 
 ### Gewijzigd

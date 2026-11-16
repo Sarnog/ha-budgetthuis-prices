@@ -8,8 +8,6 @@ TARIFF_URL = (
     "https://www.budgetthuis.nl/energie/klantenservice/actuele-dynamische-tarieven"
 )
 
-NEXT_DATA_PATTERN = r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>'
-
 # Budget Thuis publiceert de tarieven van morgen in de middag, net als de
 # day-ahead-veiling waar ze van zijn afgeleid. Elk uur ophalen is genoeg om dat
 # snel op te pikken zonder de site te belasten.
